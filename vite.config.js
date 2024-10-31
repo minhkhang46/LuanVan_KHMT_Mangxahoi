@@ -8,4 +8,8 @@ export default defineConfig({
             refresh: true,
         }),
     ],
+    build: {
+        outDir: 'public/dist', // Đường dẫn đến thư mục đầu ra (có thể thay đổi theo ý bạn)
+        emptyOutDir: true,      // Xóa thư mục đầu ra trước khi build
+    },
 });
