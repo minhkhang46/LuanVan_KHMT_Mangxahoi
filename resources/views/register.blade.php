@@ -3,11 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register</title>
+    <title>Đăng Ký</title>
+    <link rel="shortcut icon" type="image/png" href="/luanvan_tn/logo.png"/>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" /> <!-- Thêm Toastr CSS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script> <!-- Thêm jQuery trước Toastr -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script> <!-- Thêm Toastr JS -->
+    <!-- Cài đặt CSS của Select2 -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+
+<!-- Cài đặt JS của Select2 -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+
     <style>
         /* Custom styles */
         .background {
@@ -30,9 +38,9 @@
             padding: 12px 0;
         }
         .step {
-            width: 360px; /* Thay đổi giá trị này tùy theo chiều cao bạn muốn */
-            overflow: hidden; /* Ẩn các phần bị tràn */
-            height: 560px; 
+            width: 360px; 
+            overflow: hidden; 
+            /* height: 560px;  */
         }
         .input-field {
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
@@ -87,6 +95,23 @@
             width: auto !important; /* Đặt chiều rộng cho thông báo */
             font-size: 16px !important; /* Đặt kích thước chữ cho thông báo */
         }
+        .select2-container .select2-selection--single {
+            height: 45px;
+            padding: 8px 12px;  /* Điều chỉnh padding */
+            border-radius: 0.5rem;
+            border-width: 1px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            border: 2px solid rgba(0, 0, 0, 0.1);
+        }
+     
+        /* Thay đổi màu khi focus vào trường select */
+        .select2-container--default .select2-selection--single:focus {
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.3);
+        }
+
+/* /* Tùy chỉnh màu hover trên các mục trong dropdown * */
+
     </style>
 </head>
 <body>
@@ -94,7 +119,7 @@
 <div class="flex shadow-xl ">
     <div class="flex flex-col w-full md:w-3/4 items-center justify-center text-center bg-white p-8 rounded-l-lg bg-opacity-80">
         <h1 class="text-4xl font-bold text-gray-900 text-shadow transition duration-300 hover:text-gray-700">Chào mừng đến với</h1>
-        <img src="/luanvan_tn/public/image/logo.png" alt="Welcome Image" class="w-72 h-auto transition duration-300 hover:scale-105 mt-4">
+        <img src="/luanvan_tn/public/image/logo2.png" alt="Welcome Image" class="w-80 h-auto transition duration-300 hover:scale-105 -mt-3">
         <p class="text-lg text-gray-900 max-w-7xl leading-relaxed mt-2 transition duration-300 hover:text-gray-500">
         Vui lòng điền thông tin của bạn để tạo tài khoản <br> và bắt đầu kết nối với mọi người.
         </p>
@@ -103,18 +128,19 @@
     <!-- Phần chào mừng với nền riêng -->
     
     <div class="w-full md:w-3/4 items-center justify-center  ">
-        <div class="w-full max-w-2xl p-10 bg-white rounded-r-lg  ">
-        <h2 class="text-4xl font-bold text-center text-gray-900 mb-6">Đăng Ký</h2>
+        <div class="w-full max-w-full p-10 bg-white rounded-r-lg  ">
+        <h2 class="text-3xl font-bold text-center text-gray-900 mb-6">Đăng Ký Tài Khoản</h2>
 
         <form method="POST" action="{{ route('register') }}" enctype="multipart/form-data">
             @csrf
+            <div class="flex space-x-9">
             <!-- Step 1: Personal Details -->
             <div class="step" id="step-1">
-                <div class="mb-4">
+                <div class="mb-2">
                     <label class="block text-gray-700 font-semibold mb-2 form-label">Avatar</label>
                     <input type="file" name="avatar" id="avatar" class="hidden-input">
                     <div class="flex items-center space-x-4">
-                        <img id="avatarPreview" src="#" alt="Avatar Preview" class="hidden w-20 h-20 rounded-full border border-gray-300">
+                        <img id="avatarPreview" src="#" alt="Avatar " class=" w-20 h-20 rounded-full border border-gray-300">
                         <button type="button" onclick="document.getElementById('avatar').click()" class="px-4 py-2 bg-blue-500 text-white rounded-lg">Chọn Avatar</button>
                     </div>
                 </div>
@@ -128,7 +154,7 @@
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 font-semibold mb-2 ">Số Điện Thoại <span class="text-red-500">*</span></label>
-                    <input type="text" name="phone" id="phone" class="w-full px-4 py-2 border rounded-lg focus:outline-none input-field" placeholder="Nhập số điện thoại của bạn" required>
+                    <input type="text" name="phone" id="phone" class="w-full px-4 py-2 border rounded-lg focus:outline-none input-field" maxlength="10" placeholder="Nhập số điện thoại của bạn" required>
                 </div>
                 <div class="mb-4 relative">
                         <label class="block text-gray-700 font-semibold mb-2">Mật Khẩu <span class="text-red-500">*</span></label>
@@ -138,21 +164,22 @@
                                 <img src="/luanvan_tn/public/image/show.png" class="h-5 w-5">
                             </span>
                 </div>
-                <button type="button" class="w-full button bg-blue-500 text-white font-bold py-3 rounded-lg mt-auto" onclick="nextStep()">Tiếp Theo</button>
+                <!-- <button type="button" class="w-full button bg-blue-500 text-white font-bold py-3 rounded-lg mt-auto" onclick="nextStep()">Tiếp Theo</button> -->
             </div>
 
             <!-- Step 2: Contact Information -->
-            <div class="step hidden-step" id="step-2" >
+            <div class="step mt-5" id="step-2" >
                 <div class="mb-4">
                     <label class="block text-gray-700 font-semibold mb-2 " for="description">Mô Tả <span class="text-red-500">*</span></label>
                     <textarea name="description" id="description" class= "w-full px-4 py-2 border rounded-lg focus:outline-none input-field" placeholder="Nhập mô tả của bạn" rows="1" required></textarea>
                 </div>
+           
                 <div class="mb-4">
-                    <label class="block text-gray-700 font-semibold mb-2 " for="chuyende">Chuyên Ngành <span class="text-red-500">*</span></label>
-                    <input type="text" name="chuyende" id="chuyende" class="w-full px-4 py-2 border rounded-lg focus:outline-none input-field" placeholder="Nhập chuyên ngành của bạn" required>
+                    <label class="block text-gray-700 font-semibold mb-2" for="chuyende">Lĩnh vực <span class="text-red-500">*</span></label>
+                    <input type="text" name="chuyende" id="chuyende" class="w-full px-4 py-2 border rounded-lg focus:outline-none input-field" placeholder="Nhập lĩnh vực của bạn" required>
                 </div>
 
-                <!-- CV Upload Field -->
+
                 <div class="mb-4">
                     <label class="block text-gray-700 font-semibold mb-2 " for="cv">Tải CV <span class="text-red-500">*</span></label>
                     <input type="file" name="cv" id="cv" class="w-full px-4 py-2 border rounded-lg focus:outline-none input-field" required>
@@ -161,21 +188,21 @@
                 <div class="mb-4">
                     <label class="block text-gray-700 font-semibold mb-2">Ngày Sinh</label>
                     <div class="flex gap-3">
-                        <!-- Day -->
                         <select id="day" class="w-1/3 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none">
                             <option value="" disabled selected>Ngày</option>
                             @for ($i = 1; $i <= 31; $i++)
                                 <option value="{{ $i }}">{{ $i }}</option>
                             @endfor
                         </select>
-                        <!-- Month -->
+                        @php
+                            \Carbon\Carbon::setLocale('vi');
+                        @endphp
                         <select id="month" class="w-1/3 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none">
                             <option value="" disabled selected>Tháng</option>
                             @for ($i = 1; $i <= 12; $i++)
-                                <option value="{{ $i }}">{{ date('F', mktime(0, 0, 0, $i, 1)) }}</option>
+                            <option value="{{ $i }}">{{ \Carbon\Carbon::create()->month($i)->translatedFormat('F') }}</option>
                             @endfor
                         </select>
-                        <!-- Year -->
                         <select id="year" class="w-1/3 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none">
                             <option value="" disabled selected>Năm</option>
                             @for ($i = date('Y'); $i >= 1900; $i--)
@@ -203,11 +230,12 @@
                         </label>
                     </div>
                 </div>
-                <div class="flex  ">
-                    <button type="button" class="w-1/2 button1 bg-gray-500 text-white font-bold py-3 rounded-lg mr-2" onclick="prevStep()">Quay Lại</button>
-                    <button type="submit" class="w-1/2 button bg-blue-500 text-white font-bold py-3 rounded-lg ml-2">Đăng Ký</button>
-                </div>
+               
             </div>
+        </div>
+                    <!-- <button type="button" class="w-1/2 button1 bg-gray-500 text-white font-bold py-3 rounded-lg mr-2" onclick="prevStep()">Quay Lại</button> -->
+        <button type="submit" class="w-full mb-6 button bg-blue-500 text-white font-bold py-3 rounded-lg">Đăng Ký</button>
+               
         </form>
         <p class="text-center text-gray-600 -mt-2">
     Bạn đã có tài khoản?
@@ -296,5 +324,15 @@ document.getElementById('togglePassword').addEventListener('click', function() {
 });
 
     </script>
+<script>
+    $(document).ready(function() {
+        // Khởi tạo Select2 với tính năng tags
+        $('#chuyende').select2({
+            tags: true, // Cho phép nhập giá trị mới
+            tokenSeparators: [',', ' '], // Tách giá trị mới bằng dấu phẩy hoặc dấu cách
+            width: '100%' // Đảm bảo width của select đủ rộng
+        });
+    });
+</script>
 </body>
 </html>

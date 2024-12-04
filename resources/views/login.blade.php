@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Đăng Nhập</title>
+    <link rel="shortcut icon" type="image/png" href="/luanvan_tn/logo.png"/>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" /> <!-- Thêm Toastr CSS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script> <!-- Thêm jQuery trước Toastr -->
@@ -77,7 +78,7 @@
             <!-- Welcome Section -->
             <div class="flex flex-col w-full md:w-3/4 items-center justify-center text-center mr-12 bg-white p-8 rounded-l-lg bg-opacity-80" style="width: 84%;">
                 <h1 class="text-4xl font-bold text-gray-900 text-shadow transition duration-300 hover:text-gray-700">Chào mừng đến với</h1>
-                <img src="/luanvan_tn/public/image/logo.png" alt="Welcome Image" class="w-72 h-auto transition duration-300 hover:scale-105 mt-4">
+                <img src="/luanvan_tn/public/image/logo2.png" alt="Welcome Image" class="w-80 h-auto transition duration-300 hover:scale-105 -mt-2">
                 <p class="text-lg text-gray-900 max-w-7xl leading-relaxed mt-2 transition duration-300 hover:text-gray-500">
                     Nơi để khám phá những cơ hội mới và <br> kết nối với mọi người.
                 </p>
@@ -86,7 +87,7 @@
             <!-- Login Form Section -->
             <div class="flex flex-col w-full md:w-3/4 max-w-7xl items-center justify-center ">
                 <div class="w-full p-10 bg-white rounded-r-lg" style="width: 130%;">
-                    <h2 class="text-3xl font-bold text-center text-gray-900 mb-6">Đăng nhập</h2>
+                    <h2 class="text-3xl font-bold text-center text-gray-900 mb-6">Đăng Nhập</h2>
 
                     <form method="POST" action="{{ route('logins') }}">
                         @csrf

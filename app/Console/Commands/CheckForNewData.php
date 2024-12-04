@@ -1,11 +1,10 @@
 <?php
-
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Process\Process;
-
+use App\Models\ExecutionLog;
 class CheckForNewData extends Command
 {
     protected $signature = 'data:check-new'; // Đăng ký lệnh
@@ -13,6 +12,9 @@ class CheckForNewData extends Command
 
     public function handle()
     {
+        // Bắt đầu đo thời gian
+        $startTime = microtime(true);
+
         // Kiểm tra nếu có dữ liệu mới
         $latestUser = DB::table('user_nds')->latest('id')->first();
 
@@ -51,5 +53,20 @@ class CheckForNewData extends Command
         } else {
             $this->info('Không có dữ liệu mới. Không cần chạy lại script.');
         }
+
+        // Kết thúc đo thời gian
+        $endTime = microtime(true);
+        $executionTime = $endTime - $startTime;
+    
+    
+        ExecutionLog::create([
+            'function_name' => 'data:check-new',
+            'execution_time' => $executionTime,
+        ]);
+    
+      
+        // Hiển thị thời gian thực thi
+        $this->info('Thời gian thực thi lệnh: ' . round($executionTime, 2) . ' giây.');
+        \Log::info('Lệnh data:check-new thực thi trong ' . round($executionTime, 2) . ' giây.');
     }
 }

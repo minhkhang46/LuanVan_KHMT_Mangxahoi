@@ -77,7 +77,7 @@
 
 <div class="flex-container mx-auto pt-8">
     <!-- Phần danh sách người dùng -->
-    <div class="user-list bg-white rounded-lg overflow-auto">
+    <div class="user-list bg-white rounded-lg overflow-auto " >
         <div class="px-2 py-3">
             <h4 class="text-2xl font-semibold text-gray-900 text-center">Tin nhắn</h4>
         </div>
@@ -108,22 +108,36 @@
                                         <h3 class="text-xl font-semibold text-gray-800">{{ $user->name }}</h3>
                                         <div class="flex items-center justify-between space-x-2">
                                             <p class="{{ $isSender && !$isRead ? 'font-bold text-gray-700' : 'text-gray-700' }} text-lg truncate max-w-[calc(100% - 150px)]">
-                                                @if ($latestMessage->image)
-                                                    <span class="flex items-center space-x-1 text-lg">
-                                                        {{ !$isSender ? 'Bạn: ' : '' }}
-                                                        <img id="imageIcon1" src="/luanvan_tn/public/image/images.png" alt="Image Icon" class="w-8 h-8 cursor-pointer ml-2 mr-1">
-                                                        <span class="text-lg">Hình ảnh</span>
-                                                    </span>
-                                                @elseif ($latestMessage->file)
-                                                    <span class="text-blue-500 truncate block w-full" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                                        {{ !$isSender ? 'Bạn: ' : '' }}{{ $latestMessage->file_name }}
-                                                    </span>
-                                                @else
+                                            @if ($latestMessage->image)
+                                                <span class="flex items-center space-x-1 text-lg">
+                                                    {{ !$isSender ? 'Bạn: ' : '' }}
+                                                    <img id="imageIcon1" src="/luanvan_tn/public/image/images.png" alt="Image Icon" class="w-8 h-8 cursor-pointer ml-2 mr-1">
+                                                    <span class="text-lg">Hình ảnh</span>
+                                                </span>
+                                            @elseif ($latestMessage->file)
+                                                <span class="text-blue-500 truncate block w-full" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                    {{ !$isSender ? 'Bạn: ' : '' }}{{ $latestMessage->file_name }}
+                                                </span>
+                                            @else
+                                                <span class="truncate block w-full" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                                     {{ !$isSender ? 'Bạn: ' : '' }}{{ $latestMessage->content }}
-                                                @endif
+                                                </span>
+                                            @endif
+
                                             </p>
                                             <p class="text-gray-500 text-lg ml-auto whitespace-nowrap">
-                                                {{ $latestMessage->created_at->locale('vi')->diffForHumans() }}
+                                               
+                                                @php
+                                            $createdAt = $latestMessage->created_at;
+                                        @endphp
+
+                                        @if ($createdAt->diffInDays(Carbon\Carbon::now()) >= 1)
+                                            <!-- Hiển thị ngày theo định dạng YYYY-MM-DD nếu đã qua 1 ngày -->
+                                            {{ $createdAt->locale('vi')->isoFormat('DD-MM-YYYY') }}
+                                        @else
+                                            <!-- Hiển thị thời gian tương đối nếu chưa qua 1 ngày -->
+                                            {{ $createdAt->locale('vi')->diffForHumans() }}
+                                        @endif
                                             </p>
                                         </div>
                                     </div>
@@ -185,7 +199,7 @@
                                 <img src="{{ asset('storage/' . $sender->avatar) }}" alt="Sender Avatar" class="h-10 w-10 rounded-full  mr-2">
                             @endif
                             <div class="flex-row">
-                                <div class="message flex flex-col px-4 py-2 rounded-md border bg-white {{ $message->sender_id == session('id') ? 'border-green-300' : 'border-gray-300' }}">
+                                <div class="message flex flex-col px-4 py-2 rounded-lg border max-w-xl bg-white {{ $message->sender_id == session('id') ? 'bg-blue-300 ' : 'border-blue-300' }}">
                                     <p class="text-gray-800 text-lg">{{ $message->content }}</p>
                                     @if($message->image)
                                         <img src="{{ asset('storage/' . $message->image) }}" alt="Image" class="mt-2 rounded-md max-w-3xl zoomable-image" onclick="openImageModal(this.src)">
@@ -197,7 +211,19 @@
                                             Tải file đính kèm: {{ $message->file_name }}
                                         </a>
                                     @endif
-                                    <small class="text-gray-500 text-base mt-1">{{ $message->created_at->locale('vi')->diffForHumans() }}</small>
+                                    <small class="text-gray-500 text-base mt-1">
+                                        @php
+                                            $createdAt = $message->created_at;
+                                        @endphp
+
+                                        @if ($createdAt->diffInDays(Carbon\Carbon::now()) >= 1)
+                                            <!-- Hiển thị ngày theo định dạng YYYY-MM-DD nếu đã qua 1 ngày -->
+                                            {{ $createdAt->locale('vi')->isoFormat('DD-MM-YYYY') }}
+                                        @else
+                                            <!-- Hiển thị thời gian tương đối nếu chưa qua 1 ngày -->
+                                            {{ $createdAt->locale('vi')->diffForHumans() }}
+                                        @endif
+                                            </small>
                                 </div>
                                 @if($isLatestMessage)
                                     @if(!$message->is_read && $message->receiver_id != session('id'))
@@ -230,7 +256,8 @@
                             <input type="file" id="fileInput1" style="display: none;" name="image" accept="image/*" onchange="updateFileName('fileInput1')"/>
                             <input type="file" id="fileInput2" style="display: none;" name="file" onchange="updateFileName('fileInput2')"/>
                             <input type="hidden" name="receiver_id" value="{{ $receiverId }}">
-                            <textarea name="content" rows="1" class="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Nhập tin nhắn"></textarea>
+                            <textarea  name="content"  rows="1"  wrap="soft"  class="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"   placeholder="Nhập tin nhắn"></textarea>
+
                             <button type="submit" class="ml-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Gửi</button>
                         </div>
                     </form>
@@ -279,6 +306,41 @@ function openImageModal(src) {
 
     document.body.appendChild(modal);
 }
+$(document).ready(function() {
+            const errorMessage = "{{ session('error') }}";
+            if (errorMessage) {
+                toastr.error(errorMessage, 'Lỗi', { // Thay đổi thông báo nếu cần
+                    positionClass: 'toast-top-right',
+                    timeOut: 5000, // Thời gian tự động ẩn
+                    closeButton: true,
+                    progressBar: true
+                  
+                });
+                // $('.toast').css('max-width', '600px'); // Đặt chiều dài tối đa
+            }
+        });
+$(document).ready(function() {
+        const successMessage = "{{ session('success') }}";
+            if (successMessage) {
+                toastr.success(successMessage, 'Thành công', { // Thay đổi thông báo nếu cần
+                    positionClass: 'toast-top-right',
+                    timeOut: 5000, // Thời gian tự động ẩn
+                    closeButton: true,
+                    progressBar: true
+                });
+            }
+        });
 </script>
+<!-- <script>
+    document.querySelector('form').addEventListener('submit', function (event) {
+        const textarea = document.querySelector('textarea[name="content"]');
+        const fileInput = document.querySelector('input[name="image"]');
+        
+        if (!textarea.value.trim() && !fileInput.value) {
+            event.preventDefault(); // Ngăn gửi form
+            alert("Bạn phải nhập nội dung hoặc chọn hình ảnh để gửi!");
+        }
+    });
+</script> -->
 
 @endsection

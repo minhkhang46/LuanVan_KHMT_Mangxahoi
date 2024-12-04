@@ -14,7 +14,7 @@ class NotificationController extends Controller
 {
   
     
-    public function showFriendRequests(Request $request, $id = null)
+    public function shownotification(Request $request, $id = null)
     {
         $userId = session('id');
     
@@ -99,6 +99,8 @@ class NotificationController extends Controller
                 return [
                     'id' => $notification->id,
                     'message' => $data->message,
+                    'reason' => $data->reason,
+                    'contact' => $data->contact,
                     'avatar' => asset('storage/' . ($data->avatar ?? 'images/default-avatar.png')),
                     'isRead' => $notification->read_at ? true : false
                 ];

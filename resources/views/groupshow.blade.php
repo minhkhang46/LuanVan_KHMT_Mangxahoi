@@ -11,15 +11,21 @@
 }
 </style>
 <div class=" mt-4 ml-4 text-left">
-    <a href="{{ route('group') }}" class="inline-block text-blue-600 hover:underline text-lg font-medium">
-        ← Quay lại danh sách nhóm
-    </a>
+    @if(session('possition') != 0)
+        <a href="{{ route('requested.groups') }}" class="inline-block text-blue-600 hover:underline text-lg font-medium">
+            ← Quay lại 
+        </a>
+    @else
+        <a href="{{ route('group') }}" class="inline-block text-blue-600 hover:underline text-lg font-medium">
+            ← Quay lại danh sách nhóm 
+        </a>
+    @endif
 </div>
 
 
 <div class="container mx-auto px-4 py-10 mt-24">
     <!-- Tên nhóm -->
-    @if ($group->is_approved !=2)
+    @if ($group->is_approved !=0)
     <div class=" text-center mb-8 bg-white rounded-lg shadow-lg border border-gray-200 w-full h-full">
         <div class="flex flex-col md:flex-row items-center p-5 -ml-32">
             <!-- Avatar của nhóm -->
@@ -35,8 +41,7 @@
 
             <!-- Thông tin nhóm -->
             <div class="md:w-2/3 -ml-36 mt-20 md:mt-0">
-                <h2 class="text-4xl font-semibold text-left md:text-left text-gray-900 capitalize mb-2">
-                    {{ $group->name }}</h2>
+                <h2 class="text-4xl font-semibold text-left md:text-left text-gray-900 capitalize mb-2">{{ $group->name }}</h2>
               
                 <!-- Phần mô tả -->
                 <div class="flex justify-between items-center mt-2">
@@ -45,11 +50,7 @@
                 </div>
             </div>
             <div class="mt-4 -ml-10 flex space-x-4">
-                <!-- Nút Nhắn Tin -->
-                <!-- <a href="{{ route('chat', ['receiverId' => $user->id]) }}" class="bg-blue-500  text-white font-semibold px-6 py-2 text-lg rounded-lg hover:bg-blue-700 transition duration-300">
-                    Nhắn tin
-                </a> -->
-                
+                               
                 <!-- Nút Tham Gia Hoặc Thông Báo Đã Tham Gia -->
                 @if (!$isMember)
                     <!-- Hiển thị nút Tham gia nhóm nếu người dùng chưa là thành viên -->
@@ -68,22 +69,23 @@
                                 </div>
                                 
                                 <!-- Dropdown menu -->
-                                <div id="dropdownMenugroup" class="hidden  absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
-                                    <div class="py-1 ">
-                                        <form action="{{ route('removeMember', $group->id) }}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <div class="flex px-4 py-2  hover:bg-gray-100">
-                                                <img src="/luanvan_tn/public/image/logout.png" alt="Email Icon" class="w-8 h-8 mr-2" />
-                                                <button type="submit" class="block w-full text-left  font-semibold text-gray-800 text-lg hover:bg-gray-100">
-                                                   Rời nhóm
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
+                                <div id="dropdownMenugroup" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+    <div class="py-1">
+        <form id="removeMemberForm" action="{{ route('removeMember', $group->id) }}" method="POST">
+            @csrf
+            @method('DELETE')
+            <div class="flex px-4 py-2 hover:bg-gray-100">
+                <img src="/luanvan_tn/public/image/logout.png" alt="Email Icon" class="w-8 h-8 mr-2" />
+                <button type="button" id="confirmRemoveButton" class="block w-full text-left font-semibold text-gray-800 text-lg hover:bg-gray-100">
+                    Rời nhóm
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
                             </div>
-                    <!-- Hiển thị thông báo nếu người dùng đã là thành viên -->
+                  
                    
                 @endif
             </div>
@@ -100,26 +102,36 @@
               <div class="border border-gray-300 mb-4"></div>
               <div class="flex items-center mb-2 ml-3">
                
-                <p class="text-gray-900 text-xl ">{{ $group->description }}</p>
+                <p class="text-gray-900 text-xl text-center">{{ $group->description }}</p>
               </div>
-              <div class="flex items-center mb-2 ml-3">
+              <!-- <div class="flex items-center mb-2 ml-3">
                @if( $group->status == 'public')
                <img src="/luanvan_tn/public/image/publlic.png" alt="Email Icon" class="w-6 h-6 mr-2" />
                 <p class="text-gray-900 font-semibold text-xl">Nhóm công khai</p>
                 @endif
-              </div>
+              </div> -->
               
             </div>
         </div>
             <!-- Danh sách thành viên -->
             <div class="w-full mb-4 mt-5 bg-white p-5 rounded-lg shadow-lg border border-gray-200">
-                <h2 class="text-2xl font-semibold text-gray-900 mb-4">Thành viên</h2>
+                <div class= "flex">
+                    <h2 class="text-2xl font-semibold text-gray-900 mb-4">Thành viên</h2>
+                    <a href="{{ route('group.members', $group->id) }}" class="  text-lg ml-36 mt-1 text-blue-700  rounded-md hover:text-blue-800 ">
+                    Xem tất cả thành viên
+                    </a>
+                </div>
                 <div class="border border-gray-300 mb-4"></div>
                 <ul class="flex flex-wrap">
                     @if($members->isEmpty())
                         <p class="text-gray-700 ml-3 text-lg text-center">Chưa có thành viên.</p>
                     @else
-                        @foreach ($members as $member)
+                        @php
+                            // Giới hạn số thành viên hiển thị là 6
+                            $limitedMembers = $members->take(6);
+                        @endphp
+                        
+                        @foreach ($limitedMembers as $member)
                             @php
                                 $memberName = $member->name ?? 'Không xác định';
                                 $memberAvatar = $member->avatar ?? 'default-avatar.png';
@@ -133,12 +145,16 @@
                                 </a>
                             </li>
                         @endforeach
+
+                    
                     @endif
                 </ul>
+
             </div>
         </div>
         <div class="w-full md:w-2/3">
             <div id="postForm" class="bg-white p-5 mb-8 rounded-lg shadow-md overflow-y-auto">
+            @if ($isMember) 
                 <form action="{{ route('post_content') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <input name="id_nd" type="hidden" value="{{ session('id') }}" />
@@ -146,8 +162,8 @@
                     <div class="mb-4 flex items-center">
                         <img class="h-11 w-11 rounded-full" src="{{ asset('storage/' . session('avatar')) }}" alt="User Avatar">
                         <textarea id="content" name="noidung" rows="1"
-                                  class="w-11/12 p-2 ml-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
-                                  placeholder="Write something..." oninput="toggleSubmitButton()"></textarea>
+                                  class="w-full p-2  ml-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+                                  placeholder="Write something..." ></textarea>
                     </div>
                     <div class="border border-gray-300 -mb-3"></div>
                     <div class="flex flex-col mb-4 space-y-4 items-end mt-3">
@@ -174,10 +190,13 @@
                             </label>
                         </div>
                     </div>
-                    <button id="postButton" type="submit"
-                            class="bg-blue-500 text-white w-full px-4 py-2 rounded-lg font-semibold hover:bg-blue-600 transition duration-300 text-lg opacity-50 cursor-not-allowed"
-                            disabled>Post</button>
+                    <button  type="submit"
+                            class="bg-blue-500 text-white w-full px-4 py-2 rounded-lg font-semibold hover:bg-blue-600 transition duration-300 text-lg "
+                            >Đăng</button>
                 </form>
+            @else
+                <div class="text-red-500 text-lg font-semibold text-center">Bạn phải là thành viên của nhóm để có thể đăng bài.</div>
+            @endif
             </div>
 
             <div class="bg-white p-5 rounded-lg mb-4">
@@ -200,8 +219,14 @@
                                     <img class="h-14 w-14 rounded-full" src="{{ asset('storage/' . $p->user_avatar) }}" alt="User Avatar">
                                 </div>
                                 <div class="ml-3 flex-1">
-                                    <p class="text-xl font-semibold text-gray-700">{{ $p->user_name }}</p>
-                                    <p class="text-lg text-gray-500">{{ $p->created_at->locale('vi')->diffForHumans() }}</p>
+                                    <p class="text-xl font-semibold text-black">{{ $p->user_name }}</p>
+                                    <p class="text-lg text-gray-700">
+                                        @if (now()->diffInHours($p->created_at) >= 24)
+                                            {{ $p->created_at->addDay()->format('d-m-Y') }}
+                                        @else
+                                            {{ $p->created_at->locale('vi')->diffForHumans() }}
+                                        @endif
+                                    </p>
                                 </div>
                                 </a>
                         @else
@@ -210,8 +235,14 @@
                                     <img class="h-14 w-14 rounded-full" src="{{ asset('storage/' . $p->user_avatar) }}" alt="User Avatar">
                                 </div>
                                 <div class="ml-3 flex-1">
-                                    <p class="text-xl font-semibold text-gray-700">{{ $p->user_name }}</p>
-                                    <p class="text-lg text-gray-500">{{ $p->created_at->locale('vi')->diffForHumans() }}</p>
+                                    <p class="text-xl font-semibold text-black">{{ $p->user_name }}</p>
+                                    <p class="text-lg text-gray-700">
+                                        @if (now()->diffInHours($p->created_at) >= 24)
+                                            {{ $p->created_at->addDay()->format('d-m-Y') }}
+                                        @else
+                                            {{ $p->created_at->locale('vi')->diffForHumans() }}
+                                        @endif
+                                    </p>
                                 </div>
                             </a>
                         @endif
@@ -227,17 +258,18 @@
 
                                 <!-- Dropdown Menu -->
                                 <div id="dropdown-menu-{{ $p->id }}" class="dropdown-menu hidden absolute right-0 mt-1 w-40 bg-gray-100 rounded-md shadow-lg z-50">
-                                    <form action="{{ route('posts.destroy', ['id' => $p->id]) }}" method="POST">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">
-                                            <div class="flex items-center">
-                                                <img id="imageIcon" src="/luanvan_tn/public/image/trash.png" alt="Image Icon" class="w-5 h-5">
-                                                <span class="ml-2">Xóa bài đăng</span>
-                                            </div>
-                                        </button>
-                                    </form>
-                                </div>
+                                <form action="{{ route('posts.destroy', ['id' => $p->id]) }}" method="POST" id="delete-post-form-{{ $p->id }}" class="delete-post-form">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="button" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100" onclick="deletePost({{ $p->id }})">
+                                        <div class="flex items-center">
+                                            <img id="imageIcon" src="/luanvan_tn/public/image/trash.png" alt="Image Icon" class="w-5 h-5">
+                                            <span class="ml-2">Xóa bài đăng</span>
+                                        </div>
+                                    </button>
+                                </form>
+                            </div>
+
 
                             </div>
                             @endif
@@ -389,7 +421,7 @@
     </div>
     @else 
     <div class="bg-green-100 text-center text-xl text-green-800 p-4 rounded-lg shadow-lg">
-            Nhóm không tồn tại
+            Nhóm đang đợi duyệt
         </div>
     @endif
 </div>
@@ -550,7 +582,7 @@ document.getElementById('dropdownButtongroup').addEventListener('click', functio
         });
     });
 </script>
-<script>
+<!-- <script>
    function toggleComments(postId) {
     const commentsDiv = document.getElementById(`comments-${postId}`);
     // Kiểm tra nếu phần bình luận đang ẩn hay hiển thị
@@ -563,7 +595,89 @@ document.getElementById('dropdownButtongroup').addEventListener('click', functio
 function toggleReplyForm(commentId) {
     const replyForm = document.getElementById(`reply-form-${commentId}`);
     replyForm.classList.toggle('hidden');
+} -->
+
+</script> 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"
+        integrity="sha512-AA1Bzp5Q0K1KanKKmvN/4d3IRKVlv9PYgwFPvm32nPO6QS8yH1HO7LbgB1pgiOxPtfeg5zEn2ba64MUcqJx6CA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+function deletePost(postId) {
+    swal({
+            title: "Xác nhận xóa?",
+            text: "Bạn có chắc chắn muốn xóa bài đăng này?",
+            icon: "warning",
+            buttons: true,
+            dangerMode: true,
+        })
+        .then((willDelete) => {
+            if (willDelete) {
+                submitPostDeletion(postId); // Gọi hàm gửi request xóa bài đăng
+            } else {
+                swal("Đã hủy", "Việc xóa đã bị hủy", "error");
+            }
+        });
+}
+
+// Hàm để gửi request xóa bài đăng
+function submitPostDeletion(postId) {
+    const form = document.querySelector(`#delete-post-form-${postId}`);
+    form.submit(); // Submit form xóa bài đăng
 }
 
 </script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    document.getElementById('confirmRemoveButton').addEventListener('click', function(e) {
+        e.preventDefault();  // Ngừng hành động gửi form ngay lập tức
+
+        // Hiển thị thông báo xác nhận với SweetAlert
+        Swal.fire({
+            title: 'Bạn chắc chắn muốn rời nhóm',
+            text: "Sau khi rời, bạn sẽ không có quyền đăng bài trong nhóm.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Có, rời nhóm!',
+            cancelButtonText: 'Hủy'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Nếu người dùng xác nhận, gửi form
+                document.getElementById('removeMemberForm').submit();
+            } else {
+                Swal.fire(
+                    'Hủy bỏ',
+                    'Bạn không rời nhóm.',
+                    'error'
+                );
+            }
+        });
+    });
+    $(document).ready(function() {
+        const message = "{{ session('message') }}";
+        if (message) {
+            toastr.info(message, 'Thông báo', { // Thông báo dạng thông tin
+                positionClass: 'toast-top-right',
+                timeOut: 5000, // Thời gian tự động ẩn
+                closeButton: true,
+                progressBar: true
+            });
+        }
+    });
+    $(document).ready(function() {
+            const errorMessage = "{{ session('error') }}";
+            if (errorMessage) {
+                toastr.error(errorMessage, 'Lỗi', { // Thay đổi thông báo nếu cần
+                    positionClass: 'toast-top-right',
+                    timeOut: 5000, // Thời gian tự động ẩn
+                    closeButton: true,
+                    progressBar: true
+                  
+                });
+            }
+        });
+</script>
+
 @endsection

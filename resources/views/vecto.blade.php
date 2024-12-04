@@ -2,138 +2,343 @@
 @section('title', 'Liên kết người dùng')
 @section('content')
 
-<!-- Đặt các lớp Tailwind cho phần thân trang -->
+<style>
+    /* Container chính */
+    .graph-container {
+        display: flex;
+        flex-wrap: wrap; /* Đảm bảo hiển thị tốt trên màn hình nhỏ */
+        justify-content: space-between;
+        gap: 20px;
+        margin-top: 40px;
+        margin-left: 20px;
+        margin-right: 20px;
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 16px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
 
-    <!-- Vùng chứa cho đồ thị -->
-    <div class="flex flex-col items-center justify-center w-full h-5/6 p-10" style="height: 100%;">
-    <!-- Vùng chứa bảng ký hiệu -->
-    <!-- <div class="w-full max-w-xs mb-5 p-4 bg-white border border-gray-300 rounded-lg shadow-lg">
-        <h2 class="text-center font-semibold text-lg mb-2">Bảng ký hiệu</h2>
-        <table class="w-full text-left">
-            <thead>
-                <tr class="text-gray-700">
-                    <th class="py-2 px-4">Màu</th>
-                    <th class="py-2 px-4">Ý nghĩa</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td class="py-2 px-4"><span class="inline-block w-4 h-4 bg-red-500 rounded-full"></span></td>
-                    <td class="py-2 px-4">Người dùng hiện tại</td>
-                </tr>
-                <tr>
-                    <td class="py-2 px-4"><span class="inline-block w-4 h-4 bg-green-500 rounded-full"></span></td>
-                    <td class="py-2 px-4">Người dùng gần nhất</td>
-                </tr>
-                <tr>
-                    <td class="py-2 px-4"><span class="inline-block w-4 h-1 bg-gray-300"></span></td>
-                    <td class="py-2 px-4">Liên kết giữa các người dùng</td>
-                </tr>
-            </tbody>
-        </table>
-    </div> -->
+    /* Đồ thị */
+    .graph {
+        flex: 1 1 60%; /* Ưu tiên chiếm 60% không gian */
+        max-width: 100%;
+        height: 80vh;
+        background-color: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        position: relative;
+        overflow: hidden;
+    }
 
-    <!-- Vùng chứa cho đồ thị -->
-    <div id="sigma-container" class="w-full border bg-white p-10 border-gray-300 rounded-lg shadow-lg" style="height: 100%;"></div>
+    /* Gợi ý kết bạn */
+    .legend {
+        flex: 1 1 15%;
+        background-color: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .legend h3 {
+        font-size: 1.5rem;
+        font-weight: bold;
+        text-align: center;
+        color: #2c3e50;
+        margin-bottom: 20px;
+    }
+
+    .legend ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .legend li {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 15px;
+        margin-bottom: 15px;
+        border-radius: 12px;
+        transition: background-color 0.3s ease;
+        cursor: pointer;
+        background-color:  rgb(239 246 255);
+    }
+
+    .legend li:hover {
+        background-color: rgb(191 219 254);
+    }
+
+    .legend li img {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        margin-right: 15px;
+        border-width: 2px;
+    }
+
+    .legend .user-name {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: 'black';
+        flex-grow: 1;
+    }
+    .sigma-node {
+    width: 40px; /* Đảm bảo kích thước nút vừa đủ */
+    height: 40px;
+    border-radius: 50%; /* Đảm bảo nút có dạng tròn */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden; /* Ẩn bất kỳ phần nào của hình ảnh ngoài vùng tròn */
+}
+
+.sigma-node img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Đảm bảo ảnh trong nút có thể thay đổi kích thước đúng */
+}
+
+.sigma-node {
+    transition: all 0.3s ease; /* Thêm hiệu ứng chuyển động khi thao tác */
+}
+
+.sigma-node:hover {
+    cursor: pointer; /* Thêm hiệu ứng khi hover */
+    background-color: rgba(255, 0, 0, 0.2); /* Màu nền mờ khi hover */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* Tăng độ bóng khi hover */
+}
+.sigma-node.selected {
+    background-color: #FF0000; /* Đổi màu khi người dùng chọn */
+    border: 2px solid #FFFFFF; /* Thêm viền sáng để làm nổi bật */
+    transform: scale(1.2); /* Tăng kích thước để dễ nhận diện */
+}
+
+
+.sigma-node:hover {
+    cursor: pointer; /* Thêm hiệu ứng khi hover */
+    background-color: rgba(255, 0, 0, 0.2); /* Màu nền mờ khi hover */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* Tăng độ bóng khi hover */
+}
+
+    /* .legend button {
+        background-color: #4C6D84;
+        color: #ffffff;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .legend button:hover {
+        background-color: #2b4a62;
+    } */
+    #tooltip {
+    position: absolute;
+    display: none;
+    background-color: #f5f5f5;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    color: #333;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    pointer-events: none; /* Đảm bảo tooltip không gây trở ngại đến thao tác chuột */
+}
+
+</style>
+
+<div class="graph-container">
+    <!-- Đồ thị -->
+    <div id="sigma-container" class="graph"></div>
+
+    <div class="legend">
+    <!-- Phần 1: Danh sách bạn bè -->
+    <div class="friends-section bg-gray-100 p-4 rounded-lg shadow-md mb-4">
+        <h3 class="text-xl font-bold mb-3">Danh sách bạn bè</h3>
+        <ul>
+            @foreach ($suggestedUserMap as $id => $name)
+                @if (isset($friendStatusMap[$id]) && $friendStatusMap[$id] == 1)
+                    <li class="flex items-center mb-3">
+                        <img src="{{ $suggestedAvatarMap[$id] }}" alt="Avatar" class="w-10 h-10 rounded-full mr-3">
+                        <span class="user-name font-medium">{{ $name }}</span>
+                        <button class="ml-auto bg-green-200 text-green-700 px-4 py-1 rounded-md" disabled>Bạn bè</button>
+                    </li>
+                @endif
+            @endforeach
+        </ul>
+    </div>
+
+    <!-- Phần 2: Gợi ý kết bạn -->
+    <div class="suggested-section bg-gray-100 p-4 rounded-lg shadow-md">
+        <h3 class="text-xl font-bold mb-3">Gợi ý kết bạn</h3>
+        <ul>
+            @foreach ($suggestedUserMap as $id => $name)
+                @if (!isset($friendStatusMap[$id]) || $friendStatusMap[$id] == 0)
+                    <li class="flex items-center mb-3">
+                        <img src="{{ $suggestedAvatarMap[$id] }}" alt="Avatar" class="w-10 h-10 rounded-full mr-3">
+                        <span class="user-name font-medium">{{ $name }}</span>
+                        @if (isset($friendStatusMap[$id]) && $friendStatusMap[$id] == 0)
+                            <button class="ml-auto bg-yellow-200 text-yellow-700 px-4 py-1 rounded-md" disabled>Đã gửi yêu cầu</button>
+                        @else
+                            <form action="{{ route('sendFriendRequest', $id) }}" method="POST" class="ml-auto">
+                                @csrf
+                                <button type="submit" class="bg-blue-600 text-white px-4 py-1 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    Thêm bạn bè
+                                </button>
+                            </form>
+                        @endif
+                    </li>
+                @endif
+            @endforeach
+        </ul>
+    </div>
 </div>
 
-
-
-
+</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sigma.js/1.0.3/sigma.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sigma.js/1.0.3/plugins/sigma.layout.forceAtlas2.min.js"></script>
+
 <script>
-// Lấy dữ liệu từ PHP
-const embeddings = @json($embeddings);
-const sessionId = "{{ session('id') }}"; // Lấy session id từ PHP
-const userMap = @json($userMap); // Truyền biến userMap vào JavaScript
+    const embeddings = @json($embeddings);
+    const sessionId = "{{ session('id') }}";
+    const userMap = @json($userMap);
 
-// Tạo graph object cho Sigma.js
-const graph = {
-    nodes: [],
-    edges: []
-};
+    const graph = {
+        nodes: [],
+        edges: []
+    };
 
-// Tạo Set để theo dõi user_ids
-const userIds = new Set();
+    const userIds = new Set();
+    const relatedUsers = new Set(); // Set để lưu các user liên quan đến người dùng đã chọn
 
-// Duyệt qua dữ liệu để tạo nodes và edges
-embeddings.forEach(row => {
-    const userId = String(row[0]).trim(); // Giả sử cột đầu tiên là user_id
-    const nearestUserId = String(row[1]).trim(); // Giả sử cột thứ hai là nearest_user_id
+    embeddings.forEach(row => {
+        const userId = String(row[0]).trim();
+        const nearestUserId = String(row[1]).trim();
 
-    // Kiểm tra xem userId có trùng với sessionId không
-    if (userId === sessionId) {
-        // Thêm node cho user_id
+        if (userId === 'user_id' || nearestUserId === 'nearest_user_id') return;
+
+        // Tạo nút cho userId
         if (userId && !userIds.has(userId)) {
             graph.nodes.push({
                 id: userId,
-                label: userMap[userId] || `User ${userId}`, // Sử dụng tên người dùng nếu có
-                x: Math.random() * 1, // Giảm kích thước random
-                y: Math.random() * 1, // Giảm kích thước random
-                size: 1000, // Tăng kích thước của node
-                color: '#f00' // Màu cho node
+                label: userMap[userId] || `User ${userId}`,
+                x: Math.random(),
+                y: Math.random(),
+                size: 10,
+                color: (userId === sessionId) ? '#BB0000' : '#4C6D84',
+                image: `path_to_images/${userId}.jpg`,  // Hình ảnh đại diện người dùng
+                shadowColor: '#888888', // Bóng cho các nút
+                shadowBlur: 5, // Độ mờ của bóng
             });
             userIds.add(userId);
         }
 
-        // Thêm node cho nearest_user_id nếu chưa có
+        // Tạo nút cho nearestUserId
         if (nearestUserId && !userIds.has(nearestUserId)) {
             graph.nodes.push({
                 id: nearestUserId,
-                label: userMap[nearestUserId] || `User ${nearestUserId}`, // Sử dụng tên người dùng nếu có
-                x: Math.random() * 1 + 0, // Giảm kích thước random
-                y: Math.random() * 1 + 0, // Giảm kích thước random
-                size: 1000, // Tăng kích thước của node
-                color: '#0f0' // Màu cho node
+                label: userMap[nearestUserId] || `User ${nearestUserId}`,
+                x: Math.random(),
+                y: Math.random(),
+                size: 10,
+                color: (nearestUserId === sessionId) ? '#BB0000' : '#4C6D84',
+                image: `path_to_images/${nearestUserId}.jpg`,  // Hình ảnh đại diện người dùng
+                shadowColor: '#888888', // Bóng cho các nút
+                shadowBlur: 5, // Độ mờ của bóng
             });
             userIds.add(nearestUserId);
         }
 
-        // Thêm edge giữa user_id và nearest_user_id (đồ thị có hướng)
+        // Tạo cạnh giữa các người dùng
         if (nearestUserId) {
             graph.edges.push({
                 id: `edge_${userId}_${nearestUserId}`,
                 source: userId,
                 target: nearestUserId,
-                color: '#ccc',
-                size: 5, // Tăng độ dày của edge
-                type: 'arrow', // Đánh dấu edge là có hướng
+                color: (userId === sessionId || nearestUserId === sessionId) ? '#BB0000' : '#888888',
+                size: 2,
+                type: 'arrow'
             });
         }
-    }
-});
+    });
 
-// Khởi tạo Sigma.js
-const container = document.getElementById('sigma-container');
-const sigmaInstance = new sigma({
-    graph: graph,
-    container: container,
-    settings: {
-        defaultNodeColor: '#ec51448',
-        edgeLabelSize: 'proportional', // Kích thước nhãn cạnh
-        labelThreshold: 0, // Hiển thị nhãn ở tất cả các cạnh
-        edgesHoverColor: 'red', // Màu khi hover vào cạnh
-        edgesColor: 'default', // Màu mặc định của cạnh
-        drawEdges: true, // Vẽ cạnh
-        drawLabels: true, // Vẽ nhãn
-    }
-});
+    const container = document.getElementById('sigma-container');
+    const sigmaInstance = new sigma({
+        graph: graph,
+        container: container,
+        settings: {
+            defaultNodeColor: '#ec51448',
+            edgeLabelSize: 'proportional',
+            labelThreshold: 0,
+            drawEdges: true,
+            drawLabels: true,
+        }
+    });
 
-// Hàm để vẽ node là hình tròn
-sigma.canvas.nodes.image = function(node, context, settings) {
-    const prefix = settings('prefix') || '';
-    const size = node[prefix + 'size'];
-    const x = node[prefix + 'x'];
-    const y = node[prefix + 'y'];
+    // Áp dụng ForceAtlas2
+    sigmaInstance.startForceAtlas2({
+        worker: true, // Sử dụng Web Worker nếu trình duyệt hỗ trợ
+        barnesHutOptimize: true, // Tối ưu hóa cho các đồ thị lớn
+        slowDown: 10, // Tăng giá trị để giản rộng hơn
+        gravity: 0, // Tăng lực hấp dẫn để các node không phân tán quá xa
+    });
 
-    context.save();
-    context.beginPath();
-    context.arc(x, y, size, 0, 2 * Math.PI, false);
-    context.fillStyle = node.color; // Sử dụng màu của node
-    context.fill();
-    context.restore();
-};
+    // Tự động dừng sau 10 giây
+    setTimeout(() => {
+        sigmaInstance.stopForceAtlas2();
+    }, 10000);
 
+    // Hiển thị thông tin chi tiết khi hover qua node
+    sigmaInstance.bind('overNode', function(event) {
+        const node = event.data.node;
+        const tooltip = document.getElementById('tooltip');
+        tooltip.innerHTML = `User: ${userMap[node.id] || node.id}`;
+        tooltip.style.display = 'block';
+        tooltip.style.left = `${event.data.captor.clientX + 10}px`;
+        tooltip.style.top = `${event.data.captor.clientY + 10}px`;
+    });
+
+    sigmaInstance.bind('outNode', function() {
+        const tooltip = document.getElementById('tooltip');
+        tooltip.style.display = 'none';
+    });
+
+    // Lắng nghe sự kiện click và làm nổi bật các nút liên quan
+    sigmaInstance.bind('clickNode', function(event) {
+        const clickedNodeId = event.data.node.id;
+        relatedUsers.clear(); // Xóa các user liên quan cũ
+
+        // Tìm các nút có liên quan đến nút được chọn (tức là các nút có kết nối với nút đó)
+        graph.edges.forEach(edge => {
+            if (edge.source === clickedNodeId) {
+                relatedUsers.add(edge.target);
+            }
+            if (edge.target === clickedNodeId) {
+                relatedUsers.add(edge.source);
+            }
+        });
+
+        // Cập nhật màu sắc các nút liên quan
+        graph.nodes.forEach(node => {
+            if (relatedUsers.has(node.id)) {
+                node.color = '#FF0000';  // Màu nổi bật cho các nút liên quan
+            } else {
+                node.color = (node.id === sessionId) ? '#BB0000' : '#4C6D84';
+            }
+        });
+
+        // Cập nhật lại đồ thị để áp dụng các thay đổi
+        sigmaInstance.refresh();
+    });
 </script>
+
+<!-- Tooltip để hiển thị thông tin chi tiết -->
+<div id="tooltip" style="position: absolute; display: none; background-color: #f5f5f5; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"></div>
+
 
 @endsection

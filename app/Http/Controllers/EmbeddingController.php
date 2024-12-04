@@ -31,67 +31,100 @@ class EmbeddingController extends Controller
     {
         // Đường dẫn đến file CSV
         $csvPath = base_path('nguoi_dung_gan_nhat_combined1.csv'); // Đảm bảo đường dẫn đúng
-
+    
         // Kiểm tra xem file có tồn tại không
         if (file_exists($csvPath)) {
             // Mở file CSV
             $file = fopen($csvPath, 'r');
             $embeddings = []; // Mảng để chứa dữ liệu
-
+    
             // Đọc toàn bộ nội dung của file CSV
             while (($row = fgetcsv($file)) !== false) {
                 // Thêm từng dòng vào mảng embeddings mà không chỉ định cụ thể các cột
                 $embeddings[] = $row; // Lưu trữ toàn bộ dòng
             }
-
+    
             // Đóng file sau khi đọc xong
             fclose($file);
         } else {
             // Xử lý lỗi nếu file không tồn tại
             return response()->json(['error' => 'File not found'], 404);
         }
-
+    
         // Lấy danh sách người dùng từ cơ sở dữ liệu
         $users = UserNd::all(); // Hoặc sử dụng phương thức nào bạn đã thiết lập
         $userMap = [];
         $avatarMap = [];
         foreach ($users as $user) {
             $userMap[$user->id] = $user->name;
-           
-                // Nếu avatar không rỗng, thêm vào map
-                if (!empty($user->avatar)) {
-                    $avatarMap[$user->id] = url('storage/' . $user->avatar); // Tạo đường dẫn đầy đủ
-                } else {
-                    // Thêm avatar mặc định nếu không có
-                    $avatarMap[$user->id] = url('default-avatar.png');
-                }
-        
-            
-            // Kiểm tra avatarMap để xem kết quả
-            
-            
+    
+            // Nếu avatar không rỗng, thêm vào map
+            if (!empty($user->avatar)) {
+                $avatarMap[$user->id] = url('storage/' . $user->avatar); // Tạo đường dẫn đầy đủ
+            } else {
+                // Thêm avatar mặc định nếu không có
+                $avatarMap[$user->id] = url('default-avatar.png');
+            }
         }
-        // dd($userMap, $avatarMap);
-        // $avatarMap = [];
-        // foreach ($users as $user) {
-        //     $avatarMap[$user->id] = url('storage/' . $user->avatar);
-
-        //     dd(  $user->avatar);
-        // }
-        // Trả về view và truyền dữ liệu đã đọc
-        $currentUserId = session('id');              
+    // dd($avatarMap[2]);
+        // ID người dùng hiện tại
+        $currentUserId = session('id');
+    
+        // Lấy danh sách bạn bè hiện tại của người dùng
+        $friendList = Friend::where(function ($query) use ($currentUserId) {
+            $query->where('user_id', $currentUserId)
+                  ->orWhere('friend_id', $currentUserId);
+        })
+        ->where('status', 1) // Chỉ lấy bạn bè đã xác nhận
+        ->pluck('user_id', 'friend_id') // Lấy cả user_id và friend_id
+        ->flatten()
+        ->unique()
+        ->toArray();
+    
+        // Mảng chứa gợi ý kết bạn
+        $suggestedFriends = [];
+    
+        // Duyệt qua mảng embeddings
+        foreach ($embeddings as $row) {
+            if ($row[0] == $currentUserId) { // Nếu user_id trùng với người dùng hiện tại
+                $nearestUserId = $row[1]; // Lấy nearest_user_id
+                if (!in_array($nearestUserId, $friendList)) { // Nếu chưa là bạn bè
+                    $suggestedFriends[] = $nearestUserId;
+                }
+            }
+        }
+    
+        // Lấy danh sách chi tiết người dùng được gợi ý
+        $suggestedDetails = UserNd::whereIn('id', $suggestedFriends)->get();
+        $suggestedUserMap = [];
+        $suggestedAvatarMap = [];
+        foreach ($suggestedDetails as $user) {
+            $suggestedUserMap[$user->id] = $user->name;
+            $suggestedAvatarMap[$user->id] = !empty($user->avatar)
+                ? url('storage/' . $user->avatar)
+                : url('default-avatar.png');
+        }
+        $friendStatusMap = Friend::where('user_id', $currentUserId)
+        ->pluck('status', 'friend_id');
+        // Đếm số tin nhắn và thông báo
         $newMessagesCount = Messager::where('receiver_id', $currentUserId)
-                                 ->where('is_read', 0) // Đếm số tin nhắn chưa đọc
-                                 ->count();
+            ->where('is_read', 0)
+            ->count();
         $notificationCount = Notification::where('user_id', $currentUserId)
-                                 ->where('read_at', 0)
-                                 ->count();
+            ->where('read_at', 0)
+            ->count();
+    
+        // Trả về view
         return view('vecto', [
-            'embeddings' => $embeddings, // Truyền dữ liệu vào view
-            'csvPath' => $csvPath,        // Truyền đường dẫn vào view
-            'userMap' => $userMap  ,       // Truyền userMap vào view
-            'avatarMap'=>$avatarMap, 'newMessagesCount' =>$newMessagesCount, 
-            'notificationCount'=>$notificationCount
+            'embeddings' => $embeddings,              // Dữ liệu từ CSV
+            'csvPath' => $csvPath,                   // Đường dẫn file CSV
+            'userMap' => $userMap,                   // Map tên người dùng
+            'avatarMap' => $avatarMap,               // Map avatar người dùng
+            'suggestedUserMap' => $suggestedUserMap, // Map tên gợi ý kết bạn
+            'suggestedAvatarMap' => $suggestedAvatarMap, // Map avatar gợi ý kết bạn
+            'newMessagesCount' => $newMessagesCount, 
+            'notificationCount' => $notificationCount,
+            'user'=>$user, 'friendStatusMap' => $friendStatusMap 
         ]);
     }
     

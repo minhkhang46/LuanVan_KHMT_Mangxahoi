@@ -31,7 +31,7 @@
         @endif -->
 
     <!-- Bên Trái: Nhóm đã tham gia và tất cả nhóm -->
-    <div class="flex flex-col -ml-10 mt-2  h-auto overflow-y-auto space-y-8 mb-9" style="overflow: hidden; width: 30%;">
+    <div class="flex flex-col -ml-10 mt-2  h-auto overflow-y-auto space-y-8 mb-9" style="overflow: hidden; width: 33%;">
         <!-- Khu vực nhóm -->
         <div class="bg-white  w-full  mt-2 p-5 rounded-lg shadow-md border border-gray-200">
             <!-- Tiêu đề để hiện thị tất cả nhóm -->
@@ -41,14 +41,29 @@
             <div id="allGroupsSection" class="hidden">
                 <div class="space-y-4">
                     @foreach ($allGroups as $group)
+                        @php
+                            // Kiểm tra xem nhóm hiện tại có trong danh sách đã tham gia không
+                            $isJoined = in_array($group->id, $joined);
+                        @endphp
                         @if($group->is_approved === 1)
-                            <div class="bg-gray-50 hover:bg-gray-100 transition duration-300 rounded-lg shadow-sm">
-                                <a href="{{ route('groups.show', $group->id) }}" class="flex items-center p-4">
-                                    <img src="{{ asset('storage/' . $group->image) }}" alt="{{ $group->name }}" class="w-16 h-16  rounded-full mr-4">
+                            <div class="bg-gray-50 hover:bg-gray-100 transition duration-300 rounded-lg shadow-sm p-4 flex items-center">
+                                <a href="{{ route('groups.show', $group->id) }}" class="flex items-center flex-1">
+                                    <img src="{{ asset('storage/' . $group->image) }}" alt="{{ $group->name }}" class="w-16 h-16 rounded-full mr-4">
                                     <h3 class="text-xl font-semibold text-gray-900">{{ $group->name }}</h3>
                                 </a>
+                                <div>
+                                    @if ($isJoined)
+                                        <button class="px-4 py-2 bg-green-500 text-white rounded-lg cursor-not-allowed" disabled>Đã tham gia</button>
+                                    @else
+                                        <form action="{{ route('group.join', $group->id) }}" method="POST">
+                                            @csrf
+                                            <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Tham gia nhóm</button>
+                                        </form>
+                                    @endif
+                                </div>
                             </div>
                         @endif
+
                     @endforeach
                 </div>
             </div>
@@ -59,10 +74,7 @@
                 </button>
             </div>
             <div class="border border-gray-300 mb-4 mt-4"></div>
-            @if($u)
-                <a href="{{route('requested.groups')}}" class="text-2xl font-semibold mb-4  text-gray-800">Thông tin tạo nhóm</a>
-                <div class="border border-gray-300 mb-4 mt-4"></div>
-            @endif
+          
             <!-- Nhóm đã tham gia -->
             <div id="joinedGroupsSection">
                 <h2 class="text-2xl font-semibold mb-4  text-gray-800">Nhóm bạn đã tham gia</h2>
@@ -86,6 +98,8 @@
 <!-- Form tạo nhóm mới (ẩn mặc định) -->
     <div id="createGroupForm" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white p-6 rounded-md shadow-lg w-full max-w-md relative">
+     
+
             <!-- Nút đóng form -->
             <button id="closeFormBtn" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
                 X
@@ -107,22 +121,26 @@
                 </div>   
                 <div class="mb-4">
                     <label for="group-name" class="block text-lg font-medium text-gray-700">Tên nhóm</label>
-                    <input type="text" name="name" id="group-name" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 form-input">
+                    <input type="text" name="name" id="group-name"  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 form-input">
                 </div>
 
                 <div class="mb-4">
                     <label for="description" class="block text-lg font-medium text-gray-700">Mô tả</label>
                     <textarea name="description" id="description" rows="1" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 form-input"></textarea>
                 </div>
-                <div class="mb-4">
+        
+                <input type="text" name="is_approved" id="is_approved" hidden value="0"  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 form-input">
+
+                <input type="text" name="status" id="status" hidden value="public"  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 form-input">
+                <!-- <div class="mb-4">
                 <label for="description" class="block text-lg font-medium text-gray-700">Chọn quyền riêng tư</label>
                 <select id="status" name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 form-input">
-                                    <option value="">Chọn quyền riêng tư</option> <!-- Tùy chọn mặc định (trống) -->
+                                    <option value="">Chọn quyền riêng tư</option> 
                                     <option value="private">Riêng tư</option>
                                     <option value="public">Công khai</option>
                                 </select>
 
-                </div>
+                </div> -->
                 <!-- Trường tải ảnh và hiển thị xem trước -->
                
 
@@ -160,12 +178,18 @@
                             <!-- Thông tin về bài đăng -->
                             <div class="ml-3 flex-1">
                                 <a href="{{ route('groups.show', $post->group_id) }}">
-                                    <p class="text-xl font-bold text-gray-700">Nhóm {{ $post->group_name }}</p>
+                                    <p class="text-xl  font-bold text-black">Nhóm {{ $post->group_name }}</p>
                                 </a>
                                 <a href="{{ $post->id_nd === session('id') ? route('profile', ['id' => session('id')]) : route('profiles', ['id' => $post->id_nd]) }}" class="flex items-center">
                                     <div class="flex mt-1">
-                                        <p class="text-lg font-medium text-gray-700">{{ $post->user_name }}.</p>
-                                        <p class="text-lg text-gray-500 ml-4">{{ $post->created_at->locale('vi')->diffForHumans() }}</p>
+                                        <p class="text-lg font-medium text-black">{{ $post->user_name }}.</p>
+                                        <p class="text-lg text-black ml-4">
+                                            @if (now()->diffInHours($post->created_at) >= 24)
+                                                {{ $post->created_at->addDay()->format('d-m-Y') }}
+                                            @else
+                                                {{ $post->created_at->locale('vi')->diffForHumans() }}
+                                            @endif
+                                        </p>
                                     </div>
                                 </a>
                             </div>
@@ -555,6 +579,29 @@ function toggleReplyForm(commentId) {
             });
         }
     });
+    $(document).ready(function() {
+            const errorMessage = "{{ session('error') }}";
+            if (errorMessage) {
+                toastr.error(errorMessage, 'Lỗi', { // Thay đổi thông báo nếu cần
+                    positionClass: 'toast-top-right',
+                    timeOut: 5000, // Thời gian tự động ẩn
+                    closeButton: true,
+                    progressBar: true
+                  
+                });
+            }
+        });
+        $(document).ready(function() {
+            const warningMessage = "{{ session('warning') }}";
+            if (warningMessage) {
+                toastr.warning(warningMessage, 'Cảnh báo', { // Thông báo cảnh báo
+                    positionClass: 'toast-top-right',
+                    timeOut: 5000, // Thời gian tự động ẩn
+                    closeButton: true,
+                    progressBar: true
+                });
+            }
+        });
 
 </script>
 @endsection

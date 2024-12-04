@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use App\Models\Post;
 use App\Models\UserNd;
@@ -12,11 +12,16 @@ use App\Models\Like;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Comment;
 use App\Models\Group;
+use Illuminate\Support\Facades\Session;
 class PostController extends Controller
 {
     public function posts(Request $request)
     {
         // Xử lý tải lên file hình ảnh nếu có
+        
+        if (is_null($request->noidung) || $request->noidung === '' && is_null($request->hasFile('images')) || $request->hasFile('images') === '' && is_null($request->hasFile('files')) || $request->hasFile('files') === '') {
+            return back()->with('error', 'Vui lòng điền đầy đủ các thông tin để đăng bài.');
+        }
         if ($request->hasFile('images')) {
             $imagePath = $request->file('images')->store('image', 'public');
         } else {
@@ -25,11 +30,13 @@ class PostController extends Controller
     
         // Xử lý tải lên file đính kèm nếu có
         if ($request->hasFile('files')) {
-            $attachmentPath = $request->file('files')->store('file', 'public');
+            $originalFileName = $request->file('files')->getClientOriginalName(); // Lấy tên gốc của tệp
+            $attachmentPath = $request->file('files')->storeAs('file', $originalFileName, 'public');
             // dd($attachmentPath); // Kiểm tra đường dẫn sau khi lưu
         } else {
             $attachmentPath = null;
         }
+        
     
         // Tạo bài đăng mới
         $post = Post::create([
@@ -82,7 +89,7 @@ class PostController extends Controller
                 }
             }
     
-            return redirect()->back()->with('success', 'Tạo bài đăng thành công!');
+            return redirect()->back()->with('success', 'Đăng bài thành công!');
 
         }
     }
@@ -213,19 +220,107 @@ public function destroy($id)
     $post = Post::find($id);
 
     if ($post) {
-        // Kiểm tra xem người dùng hiện tại có quyền xóa bài đăng hay không
+        // Kiểm tra quyền xóa bài đăng
         if ($post->id_nd == session('id')) {
             $post->delete();
-            return redirect()->back()->with('success', 'Bài đăng đã được xóa thành công.');
+            // Thông báo xóa thành công
+            Session::flash('success', 'Bài đăng đã được xóa thành công.');
         } else {
-            return redirect()->back()->with('error', 'Bạn không có quyền xóa bài đăng này.');
+            // Thông báo lỗi quyền xóa
+            Session::flash('error', 'Bạn không có quyền xóa bài đăng này.');
         }
+    } else {
+        // Thông báo bài đăng không tồn tại
+        Session::flash('error', 'Bài đăng không tồn tại.');
     }
 
-    return redirect()->back()->with('error', 'Bài đăng không tồn tại.');
+    // Quay lại trang trước đó (không chuyển hướng cụ thể)
+    return back();
 }
 
-    
-    
-    
+
+
+
+// hiển thị quản lý bài viết 
+public function manageUserPost()
+{
+    $userIds = UserNd::pluck('id'); 
+
+    $posts = Post::whereIn('id_nd', $userIds)
+    ->whereNull('group_id')->orderBy('created_at', 'desc')
+    ->get();
+
+    // Lấy danh sách tên người dùng theo ID từ bảng UserNd
+    $userNames = UserNd::whereIn('id', $userIds)->pluck('name', 'id'); 
+
+    $currentUserId = session('id');
+    $newMessagesCount = Messager::where('receiver_id', $currentUserId)
+        ->where('is_read', 0)
+        ->count();
+
+    $notificationCount = Notification::where('user_id', $currentUserId)
+        ->where('read_at', 0)
+        ->count();
+
+    return view('admin.post', compact('posts', 'userNames', 'newMessagesCount', 'notificationCount'));
+}
+
+// hàm xóa bài viết
+public function deletePost(Request $request, $id)
+{
+    $userId = session('id');
+    $user = UserNd::find($userId);
+    // Tìm bài đăng
+    $post = Post::find($id);
+
+    // Nếu không tìm thấy bài đăng, trả về thông báo lỗi
+    if (!$post) {
+        return redirect()->back()->with('error', 'Bài đăng không tồn tại.');
+    }
+
+    // Kiểm tra xem bài đăng có hình ảnh không và xóa nếu có
+    if ($post->images && $post->images !== 'default/image.png') {
+        // Kiểm tra nếu hình ảnh tồn tại trên hệ thống
+        if (Storage::exists('public/' . $post->images)) {
+            Storage::delete('public/' . $post->images);
+        } else {
+            // Nếu không tìm thấy hình ảnh, trả về thông báo lỗi
+            return redirect()->back()->with('error', 'Không tìm thấy hình ảnh để xóa.');
+        }
+    }
+    $reason = $request->input('reason');
+    // dd($reason);
+    if ($reason) {
+        Notification::create([
+            'user_id' => $post->id_nd,  // Gửi thông báo đến người dùng liên quan đến bài viết
+            'type' => 'post_deleted',   // Loại thông báo
+            'data' => json_encode([
+                'message' => "Bài viết có nội dung \"{$post->noidung}\" đã bị xóa bởi quản trị viên.",
+                'reason' => "Lý do: {$reason}",
+                'contact' => "Vui lòng liên hệ với admin tại: ",  // Thêm phần liên hệ với admin
+                'chat_url' => route('chat', ['receiverId' => session('id')]) ,  // Đường dẫn đến trang chat của admin
+                'avatar' => $user->avatar ?? 'default-avatar.png',  // Avatar người gửi thông báo
+            ]),
+            'read_at' => 0,  // Đánh dấu thông báo chưa đọc
+        ]);
+        
+    }
+    // Xóa bài đăng
+    $postDeleted = $post->delete();
+
+    // Nếu bài đăng không được xóa, trả về thông báo lỗi
+    if (!$postDeleted) {
+        return redirect()->back()->with('error', 'Đã xảy ra lỗi khi xóa bài đăng.');
+    }
+
+    // Lưu lý do xóa vào thông báo nếu có lý do
+  
+
+    // Quay lại trang trước và thông báo thành công
+    return redirect()->back()->with('success', 'Xóa bài đăng thành công.');
+}
+
+
+
+
 }

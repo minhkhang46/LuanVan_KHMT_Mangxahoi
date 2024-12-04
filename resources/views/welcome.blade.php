@@ -37,7 +37,10 @@
     height: 48px;
 }
 
-
+#toast-pro {
+    max-width: 600px; /* Đặt chiều dài tối đa */
+    width: auto; /* Tự động điều chỉnh theo nội dung */
+}
 .feed-content,
 .activity-content {
     min-height: 1px;
@@ -76,12 +79,32 @@
     display: none; /* Ẩn thanh cuộn trên trình duyệt WebKit */
 }
 
+
+#toast-container>div {
+    width: 300px; /* Thay đổi giá trị này để tăng/giảm chiều rộng */
+}
+
+
+.hidden { display: none; }
+#dropdown {
+    position: absolute; /* Định vị tuyệt đối để dropdown xuất hiện ngay dưới ô nhập */
+    z-index: 1000; /* Đảm bảo dropdown nổi lên trên các phần tử khác */
+    background-color: white; /* Nền trắng để nổi bật */
+    border: 1px solid #ccc; /* Viền dropdown */
+    border-radius: 8px; /* Bo tròn góc */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Đổ bóng để đẹp hơn */
+    max-height: 200px; /* Giới hạn chiều cao dropdown */
+    overflow-y: auto; /* Thêm cuộn khi danh sách quá dài */
+}
+
 </style>
+
+
 <div class="py-10 -mt-2">
     
     <div class="flex justify-center">
         <section id="feed" class="feed w-full justify-center">
-        @if($friendSuggestions->isNotEmpty())
+        <!-- @if($friendSuggestions->isNotEmpty())
             <h2 class="text-3xl font-semibold mb-6 text-gray-800">Gợi ý kết bạn</h2>
         
                 
@@ -119,15 +142,15 @@
                     </svg>
                 </button>
             </div>
-            @endif
+            @endif -->
 
 
 
 
        
             <!-- Form to post new content -->
-            <div id="postForm" class="bg-white p-5 mb-8 rounded-lg shadow-md overflow-y-auto">
-                <form action="{{ route('post_content') }}" method="POST" enctype="multipart/form-data">
+            <div  class="bg-white p-5 mb-8 rounded-lg shadow-md overflow-y-auto">
+                <form action="{{ route('post_content') }}" id="postForm2" method="POST" enctype="multipart/form-data">
                     @csrf
                     <input name="id_nd" type="hidden" value="{{ session('id') }}" />
                     <div class="mb-4  items-center">
@@ -135,16 +158,24 @@
                             alt="User Avatar">
                    
                             <div class="flex">
-                                <input list="topics" id="topic" name="topic" class="w-full p-2 ml-2 mb-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg" placeholder="Chọn hoặc nhập chủ đề...">
+                          
+                            <div class="relative w-2/3 ml-2 mb-3">
+                                <input type="text" id="topic-input" name="topic"   autocomplete="off" 
+                                    class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg " 
+                                    placeholder="Nhập hoặc chọn chủ đề..."
+                                    onfocus="showDropdown()" 
+                                    oninput="filterDropdown()">
+                                <div id="dropdown" class="absolute hidden bg-white text-lg  border  rounded-lg  w-full">
+                                    @foreach ($topics as $topic)
+                                        <div class="p-2 cursor-pointer hover:bg-gray-200" 
+                                            onclick="selectDropdown('{{ $topic->topic }}')">
+                                            {{ $topic->topic }}
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
 
-                                <!-- Danh sách các chủ đề có sẵn để chọn -->
-                                <datalist id="topics" class="w-full">
-                                    <option value="Thị Giác Máy Tính">
-                                    <option value="Xử Lý Ngôn Ngữ Tự Nhiên">
-                                    <option value="Máy Học Ứng Dụng">
-                                    <option value="Khoa Học Máy Tính">
-                                    <option value="Khai Phá Dữ Liệu">   
-                                </datalist>
+
                                 <!-- Thẻ select chỉ cho phép người dùng chọn chủ đề từ danh sách -->
                                 <select id="regime" name="regime" class="w-1/3 p-2 ml-2 mb-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg">
                                     <option value="">Tùy chỉnh chế độ</option> <!-- Tùy chọn mặc định (trống) -->
@@ -156,7 +187,7 @@
                             <div class="mr-2">
                             <textarea id="content" name="noidung" rows="1"
                                 class="w-full p-2 ml-2 border  border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
-                                placeholder="Write something..." oninput="toggleSubmitButton()"></textarea>
+                                placeholder="Write something..." ></textarea>
                             </div>
                     </div>
                     <div class="border border-gray-300 -mb-3"></div>
@@ -176,7 +207,7 @@
                                 class="cursor-pointer text-blue-500 hover:text-blue-600 flex flex-col items-center">
                                 <img id="imageIcon" src="/luanvan_tn/public/image/image.png" alt="Image Icon"
                                     class="w-8 h-8">
-                                <input id="image" name="images" type="file" class="sr-only"
+                                <input id="image" name="images" type="file" class="sr-only" 
                                     onchange="previewSelectedFile(event, 'imagePreview', 'imageFileName')" />
                             </label>
                             <!-- File Icon -->
@@ -189,9 +220,9 @@
                             </label>
                         </div>
                     </div>
-                    <button id="postButton" type="submit"
-                        class="bg-blue-500 text-white w-full px-4 py-2 rounded-lg font-semibold hover:bg-blue-600 transition duration-300 text-lg opacity-50 cursor-not-allowed"
-                        disabled>Post</button>
+                    <button  type="submit"
+                        class="bg-blue-500 text-white w-full px-4 py-2 rounded-lg font-semibold hover:bg-blue-600 transition duration-300 text-lg "
+                        >Đăng</button>
                 </form>
             </div>
           
@@ -228,7 +259,13 @@
                         <a href="{{ $post->id_nd === session('id') ? route('profile', ['id' => session('id')]) : route('profiles', ['id' => $post->id_nd]) }}" class="flex items-center">
                             <div class="flex mt-1">
                                 <p class="text-lg font-medium text-black">{{ $post->user_name }}.</p>
-                                <p class="text-lg text-gray-500 ml-4">{{ $post->created_at->locale('vi')->diffForHumans() }}</p>
+                                <p class="text-lg text-black ml-2">
+                                    @if (now()->diffInHours($post->created_at) >= 24)
+                                        {{ $post->created_at->addDay()->format('d-m-Y') }}
+                                    @else
+                                        {{ $post->created_at->locale('vi')->diffForHumans() }}
+                                    @endif
+                                </p>
 
                             </div>
                         </a>
@@ -245,7 +282,14 @@
                         
                             <p class="text-xl font-semibold text-black">{{ $post->user_name }}</p>
                             <div class="flex">
-                                <p class="text-lg text-gray-500">{{ $post->created_at->locale('vi')->diffForHumans() }}</p>
+                                <p class="text-lg text-gray-700">
+                                    @if (now()->diffInHours($post->created_at) >= 24)
+                                        {{ $post->created_at->addDay()->format('d-m-Y') }}
+                                    @else
+                                        {{ $post->created_at->locale('vi')->diffForHumans() }}
+                                    @endif
+                                </p>
+
                                 @if( $post->regime === 1)
                                 <img id="imageIcon" src="/luanvan_tn/public/image/friend.png" alt="Image Icon"
                                 class="w-5 h-5 ml-3 mt-1">
@@ -264,16 +308,19 @@
                         </button>
 
                         <!-- Dropdown Menu -->
-                        <div id="dropdown-menu-{{ $post->id }}" class="dropdown-menu hidden absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
-                            <form action="{{ route('posts.destroy', ['id' => $post->id]) }}" method="POST">
+                        <div id="dropdown-menu-{{ $post->id }}" class="dropdown-menu hidden absolute right-0 mt-1 w-40 bg-gray-100 rounded-md shadow-lg z-50">
+                            <form action="{{ route('posts.destroy', ['id' => $post->id]) }}" method="POST" id="delete-post-form-{{ $post->id }}" class="delete-post-form">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
-                                    <img src="/luanvan_tn/public/image/trash.png" alt="Delete" class="w-5 h-5">
-                                    <span class="ml-2">Xóa bài đăng</span>
+                                <button type="button" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100" onclick="deletePost({{ $post->id }})">
+                                    <div class="flex items-center">
+                                        <img id="imageIcon" src="/luanvan_tn/public/image/trash.png" alt="Image Icon" class="w-5 h-5">
+                                        <span class="ml-2">Xóa bài đăng</span>
+                                    </div>
                                 </button>
                             </form>
                         </div>
+
                     </div>
                   @endif
                 </div>
@@ -492,6 +539,15 @@
         </aside>
     </div>
 </div>
+  <footer class="bg-white text-black text-center py-8 mt-8">
+  <div class="flex justify-center space-x-6">
+    <!-- Nút dẫn đến Trang Chủ -->
+    <a href="{{ route('homes', ['id' => session('id')]) }}" class="text-lg font-semibold hover:text-indigo-300 transition duration-300">Trang Chủ</a>
+    <!-- Nút dẫn đến Trang Giới Thiệu -->
+    <a href="{{ route('lists') }}" class="text-lg font-semibold hover:text-indigo-300 transition duration-300">Giới Thiệu</a>
+  </div>
+  <p class="text-sm mt-4">&copy; 2024 ConnectAI. Kết nối cộng đồng, thúc đẩy sự phát triển lĩnh vực trí tuệ nhân tạo</p>
+</footer>
 <script>
 function previewSelectedFile(event, previewId, fileNameId) {
     const input = event.target;
@@ -519,20 +575,6 @@ function previewSelectedFile(event, previewId, fileNameId) {
     }
 }
 
-function toggleSubmitButton() {
-    const textarea = document.getElementById('content');
-    const submitButton = document.getElementById('postButton');
-
-    if (textarea.value.trim() !== '') {
-        submitButton.disabled = false;
-        submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
-        submitButton.classList.add('opacity-100', 'cursor-pointer');
-    } else {
-        submitButton.disabled = true;
-        submitButton.classList.add('opacity-50', 'cursor-not-allowed');
-        submitButton.classList.remove('opacity-100', 'cursor-pointer');
-    }
-}
 </script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
@@ -581,7 +623,9 @@ function toggleSubmitButton() {
         });
     });
 </script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"
+        integrity="sha512-AA1Bzp5Q0K1KanKKmvN/4d3IRKVlv9PYgwFPvm32nPO6QS8yH1HO7LbgB1pgiOxPtfeg5zEn2ba64MUcqJx6CA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <script>
 function openModal(postId) {
@@ -631,35 +675,29 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.delete-post-form').forEach(function(form) {
-        form.addEventListener('submit', function(event) {
-            event.preventDefault(); // Ngăn việc submit mặc định để xử lý bằng JS
-
-            if (confirm('Bạn có chắc chắn muốn xóa bài đăng này không?')) {
-                // Gửi request xóa bài đăng
-                fetch(form.action, {
-                    method: 'POST',
-                    body: new FormData(form),
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') // Gửi CSRF token
-                    }
-                }).then(response => {
-                    if (response.ok) {
-                        alert('Bài đăng đã được xóa thành công.'); // Thông báo xóa thành công
-                        location.reload(); // Làm mới trang sau khi xóa thành công
-                    } else {
-                        alert('Không thể xóa bài đăng.'); // Thông báo lỗi nếu xóa không thành công
-                        console.error('Error: Failed to delete post');
-                    }
-                }).catch(error => {
-                    alert('Đã xảy ra lỗi khi xóa bài đăng.'); // Thông báo lỗi khi gặp sự cố
-                    console.error('Error:', error);
-                });
+function deletePost(postId) {
+    swal({
+            title: "Xác nhận xóa?",
+            text: "Bạn có chắc chắn muốn xóa bài đăng này?",
+            icon: "warning",
+            buttons: true,
+            dangerMode: true,
+        })
+        .then((willDelete) => {
+            if (willDelete) {
+                submitPostDeletion(postId); // Gọi hàm gửi request xóa bài đăng
+            } else {
+                swal("Đã hủy", "Việc xóa đã bị hủy", "error");
             }
         });
-    });
-});
+}
+
+// Hàm để gửi request xóa bài đăng
+function submitPostDeletion(postId) {
+    const form = document.querySelector(`#delete-post-form-${postId}`);
+    form.submit(); // Submit form xóa bài đăng
+}
+
 document.getElementById('nextButton').addEventListener('click', function() {
     // Tìm phần tử có id 'suggestionsContainer' và cuộn nó sang phải
     document.getElementById('suggestionsContainer').scrollBy({ left: 300, behavior: 'smooth' });
@@ -694,8 +732,78 @@ function toggleReplyForm(commentId) {
     const replyForm = document.getElementById(`reply-form-${commentId}`);
     replyForm.classList.toggle('hidden');
 }
+function showSuggestions(value) {
+    const suggestions = document.getElementById('suggestions');
+    const items = suggestions.getElementsByTagName('li');
+
+    // Hiển thị danh sách nếu có nội dung
+    if (value) {
+        suggestions.classList.remove('hidden');
+
+        // Ẩn các gợi ý không khớp
+        Array.from(items).forEach((item) => {
+            if (item.innerText.toLowerCase().includes(value.toLowerCase())) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    } else {
+        suggestions.classList.add('hidden'); // Ẩn danh sách nếu không có nội dung
+    }
+}
 
 </script>
 
+<script>
+function showDropdown() {
+    document.getElementById('dropdown').classList.remove('hidden');
+}
+
+function filterDropdown() {
+    const input = document.getElementById('topic-input').value.toLowerCase();
+    const dropdown = document.getElementById('dropdown');
+    const items = dropdown.children;
+
+    for (let i = 0; i < items.length; i++) {
+        const text = items[i].innerText.toLowerCase();
+        if (text.includes(input)) {
+            items[i].style.display = 'block';
+        } else {
+            items[i].style.display = 'none';
+        }
+    }
+}
+
+function selectDropdown(topic) {
+    document.getElementById('topic-input').value = topic;
+    document.getElementById('dropdown').classList.add('hidden');
+}
+
+$(document).ready(function() {
+            const errorMessage = "{{ session('error') }}";
+            if (errorMessage) {
+                toastr.error(errorMessage, 'Lỗi', { // Thay đổi thông báo nếu cần
+                    positionClass: 'toast-top-right',
+                    timeOut: 5000, // Thời gian tự động ẩn
+                    closeButton: true,
+                    progressBar: true
+                  
+                });
+                // $('.toast').css('max-width', '600px'); // Đặt chiều dài tối đa
+            }
+        });
+$(document).ready(function() {
+        const successMessage = "{{ session('success') }}";
+            if (successMessage) {
+                toastr.success(successMessage, 'Thành công', { // Thay đổi thông báo nếu cần
+                    positionClass: 'toast-top-right',
+                    timeOut: 5000, // Thời gian tự động ẩn
+                    closeButton: true,
+                    progressBar: true
+                });
+            }
+        });
+</script>
 
 @endsection

@@ -68,7 +68,23 @@
 
             <!-- Kết quả Tìm kiếm -->
             <div class="md:col-span-2 p-6 " id="all"   >
-           
+            @if ($errors->any())
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+        <strong class="font-bold text-center">Có lỗi xảy ra:</strong>
+        <ul class="list-disc ml-6 mt-2 text-center">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+        <button class="absolute top-0 bottom-0 right-0 px-4 py-3" onclick="this.parentElement.style.display='none';">
+            <svg class="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                <title>Close</title>
+                <path d="M14.348 14.849a1 1 0 001.415-1.415L11.414 10l4.349-4.349a1 1 0 10-1.415-1.415L10 8.586 5.651 4.237a1 1 0 10-1.415 1.415L8.586 10l-4.35 4.349a1 1 0 001.415 1.415L10 11.414l4.348 4.435z"/>
+            </svg>
+        </button>
+    </div>
+@endif
+
                 <div id="users" class="{{ ($posts->isNotEmpty() || $groups->isNotEmpty()) ? '' : 'mb-12' }}">
                 
                 @if($users->count())
@@ -199,16 +215,14 @@
                                             <p class="text-gray-500 text-lg">{{ $m->email }}</p>
                                             @if($m->group_names)
                                     <p class="text-gray-500 text-lg">Nhóm: {{ implode(', ', $m->group_names) }}</p>
-                                @else
-                                    <p class="text-gray-500 text-lg">Chưa tham gia nhóm</p>
+                               
                                 @endif
                                         </div>
                                     </li>
                                 @endforeach
                             </ul>
                         </div>
-                    @else
-                        <p class="text-gray-500">Không tìm thấy thành viên nào.</p>
+                  
                     @endif
               
 
@@ -442,8 +456,7 @@
                                 </div>
                             @endforeach
                         </div>
-                    @else
-                        <p class="text-gray-500">Không tìm thấy nhóm nào.</p>
+               
                     @endif
 
                 
@@ -643,8 +656,10 @@
                             </div>
                             @endforeach
                         </ul>
-                    @else
-                    <p class="text-gray-500">Không tìm thấy bài viết.</p>
+                    @else   
+                    <div class="bg-green-100 text-center text-green-800 p-4 rounded-lg shadow-lg">
+                        Không có tìm thấy kết quả.
+                    </div>
                     @endif
               
                 </div>

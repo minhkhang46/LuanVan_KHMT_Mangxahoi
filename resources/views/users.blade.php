@@ -1,7 +1,7 @@
 <!-- resources/views/profile.blade.php -->
 @extends('layouts.app')
 
-@section('title', 'Profile')
+@section('title', "Trang người dùng $user->name" )
 
 @section('content')
 <style>
@@ -33,29 +33,50 @@
           
             <!-- Buttons Section -->
             <div class="flex justify-between items-center mt-2">
-              <p class="text-lg text-black">{{$totalFriends}} bạn bè</p>
+            <div class="flex">
+                    <p class="text-lg text-black"> <strong>{{$totalFriends}}</strong> bạn bè</p>
+                    <p class="text-lg text-black ml-10"><strong>{{$postCount}}</strong> bài viết</p>
+</div>
+              
             
               <div class="flex space-x-4 -mr-20"> <!-- Thêm thẻ div để bao quanh các nút -->
               <a href="{{ route('chat', ['receiverId' => $user->id]) }}" class="bg-blue-500  text-white font-semibold  px-4 py-2  text-lg rounded-lg hover:bg-blue-700 transition duration-300">Nhắn tin</a>
                   @if($receivedRequest)
-                      @if($receivedRequest->status == 0)
+                        @if($receivedRequest->status == 0 )
                           <form action="{{ route('acceptFriendRequest', $user->id) }}" method="POST" class="inline-block">
                               @csrf
                               <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition duration-300">
                                   Chấp nhận
                               </button>
                           </form>
-                          <form action="#" method="POST" class="inline-block">
+                          <form action="{{ route('friend.reject', $user->id) }}" method="POST" class="inline-block">
                               @csrf
                               <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition duration-300">
                                   Từ chối
                               </button>
                           </form>
+                            @elseif($receivedRequest->status == 2) 
+                            <div>
+                                <button id="dropdownButton1" class="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition duration-300">
+                                    Yêu cầu đã bị từ chối 
+                                    </button>
+                            </div>
+                            <div id="dropdownMenu1" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+                                <div class="py-1">
+                                    <form action="{{ route('sendFriendRequest', $user->id) }}" method="POST">
+                                        @csrf
+                                       
+                                        <button type="submit" class="block w-full text-left px-4 py-2 font-semibold text-gray-800 text-lg hover:bg-gray-100">
+                                            Thêm bạn bè
+                                        </button> 
+                                    </form>
+                                </div>
+                            </div>
                             @elseif($receivedRequest->status == 1)
                             <div class="relative inline-block text-left">
                                 <div>
                                     <button id="dropdownButton1" class="inline-flex justify-between w-full text-lg bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold">
-                                        Bạn bè
+                                        Bạn bè 
                                     </button>
                                 </div>
                                 
@@ -77,32 +98,50 @@
                             </div>
                       @endif
                     @elseif($requestStatus)
-                      @if($requestStatus->status == 0)
+                      @if($requestStatus->status == 0 )
                           <p class="text-lg bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold">Yêu cầu đã gửi</p>
                       @elseif($requestStatus->status == 1)
                       <div class="relative inline-block text-left">
                                 <div>
                                     <button id="dropdownButton1" class="inline-flex justify-between w-full text-lg bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold">
-                                        Bạn bè
+                                        Bạn bè 
                                     </button>
                                 </div>
                                 
                                 <!-- Dropdown menu -->
                                 <div id="dropdownMenu1" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
                                     <div class="py-1">
-                                        <form action="{{ route('removeFriend', $user->id) }}" method="POST">
+                                    <form action="{{ route('removeFriend',  $user->id) }}" method="POST">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="block w-full text-left px-4 py-2 font-semibold text-gray-800 text-lg hover:bg-gray-100">
-                                                Hủy Kết Bạn
-                                            </button>
+                                            <div class="flex px-4 py-2  hover:bg-gray-100">
+                                                <img src="/luanvan_tn/public/image/un.png" alt="Email Icon" class="w-8 h-8 mr-2" />
+                                                <button type="submit" class="block w-full text-left  font-semibold text-gray-800 text-lg hover:bg-gray-100">
+                                                    Hủy Kết Bạn
+                                                </button>
+                                            </div>
                                         </form>
                                     </div>
                                 </div>
                             </div>
 
-                      @elseif($requestStatus->status == 2)
-                          <p class="text-lg text-red-600">Yêu cầu đã bị từ chối</p>
+                        @elseif($requestStatus->status == 2)
+                            <div>
+                                <button id="dropdownButton1" class="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition duration-300">
+                                    Yêu cầu đã bị từ chối 
+                                    </button>
+                            </div>
+                            <div id="dropdownMenu1" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+                                <div class="py-1">
+                                    <form action="{{ route('sendFriendRequest', $user->id) }}" method="POST">
+                                        @csrf
+                                     
+                                        <button type="submit" class="block w-full text-left px-4 py-2 font-semibold text-gray-800 text-lg hover:bg-gray-100">
+                                            Thêm bạn bè
+                                        </button> 
+                                    </form>
+                                </div>
+                            </div>
                       @endif
                   @else
                       <form action="{{ route('sendFriendRequest', $user->id) }}" method="POST">
@@ -140,9 +179,9 @@
                 <div class="flex items-center mb-2 ml-2">
                     <img src="/luanvan_tn/public/image/study.png" alt="Email Icon" class="w-8 h-8 mr-2" />
                     @if($user->chuyende )
-                        <p class="text-gray-700 text-lg">Chuyên đề {{ $user->chuyende }}</p>
+                        <p class="text-gray-700 text-lg">Chuyên môn {{ $user->chuyende }}</p>
                     @else
-                        <p class="text-gray-700 text-lg">Chưa có chuyên đề</p>
+                        <p class="text-gray-700 text-lg">Chưa có chuyên môn</p>
                     @endif
                 </div>
                 <div class="flex items-center mb-2 ml-2">
@@ -157,44 +196,60 @@
                 </div>
               <div class="flex items-center mb-2 ml-3">
                 <img src="/luanvan_tn/public/image/email.png" alt="Email Icon" class="w-6 h-6 mr-2" />
-                <p class="text-gray-700 text-lg">{{ $user->email }}</p>
+                @if($user->email)
+                        <p class="text-gray-700 text-lg">{{ $user->email }}</p>
+                        @else 
+                        <p class="text-gray-700 text-lg">Chưa có email</p>
+                        @endif
               </div>
               <div class="flex items-center mb-2 ml-3">
                 <img src="/luanvan_tn/public/image/phone.png" alt="Phone Icon" class="w-6 h-6 mr-2" />
-                <p class="text-gray-700 text-lg">{{ $user->phone }}</p>
-              </div>
+                @if($user->phone)
+                    <p class="text-gray-700 text-lg">{{ $user->phone }}</p>
+                @else 
+                    <p class="text-gray-700 text-lg">Chưa có số điện thoại</p>
+                @endif
+                </div>
               <div class="flex items-center mb-2 ml-3">
                 <img src="/luanvan_tn/public/image/day.png" alt="Day Icon" class="w-6 h-6 mr-2" />
-                <p class="text-gray-700 text-lg">
-                  @php
-                    use Carbon\Carbon;
-                    $carbonDate = Carbon::parse($user->date);
-                    $formattedDate = $carbonDate->locale('vi')->translatedFormat('d F Y');
-                  @endphp
-                  {{ $formattedDate }}
-                </p>
+             
+                        <p class="text-gray-700 text-lg">
+                            @php
+                            use Carbon\Carbon;
+                            $carbonDate = Carbon::parse($user->date);
+                            $formattedDate = $carbonDate->locale('vi')->translatedFormat('d F Y');
+                            @endphp
+                            {{ $formattedDate }}
+                        </p>
+                     
               </div>
             </div>
         </div>
         <!-- Danh sách bạn bè -->
         <div class="mb-4 w-full bg-white p-5 rounded-lg shadow-lg border border-gray-200 mt-5" >
-          <h3 class="text-2xl font-semibold text-gray-900 mb-3">Danh sách bạn bè</h3>
-          <div class="border border-gray-300 mb-4"></div>
-            @if(empty($friendInfos))
-                  <p class="text-gray-700 ml-3 text-lg text-center">Chưa có bạn bè.</p>
-              @else
-              @php
-                  $count = 0;
-              @endphp
+        <div class= "flex">
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">Danh sách bạn bè</h2>
+            <a href="{{ route('friend.list', ['id' => $user->id]) }}" class="text-lg  ml-24 mt-1 text-blue-700 rounded-md hover:text-blue-800">
+    Xem tất cả bạn bè
+</a>
 
+                </div>
+    
+          <div class="border border-gray-300 mb-4"></div>
+             @if(empty($friendInfos))
+                <p class="text-gray-700 ml-3 text-lg text-center">Chưa có bạn bè.</p>
+            @else
                 <ul class="flex flex-wrap">
-                    @foreach($friendInfos as $friendInfo)
+                    @php
+                        $limitedMembers = array_slice($friendInfos, 0, 6);
+                    @endphp
+
+                    @foreach($limitedMembers as $friendInfo)
                         @php
                             $friendName = $friendInfo->name ?? 'Không xác định';
                             $friendAvatar = $friendInfo->avatar ?? 'default-avatar.png';
                             $profileRoute = route('profiles', ['id' => $friendInfo->id]);
                             $isCurrentUser = ($friendInfo->id === $sessionUserId);
-                            $count++;
                         @endphp
 
                         <li class="mb-4 flex flex-col w-1/3">
@@ -203,15 +258,10 @@
                                 <p class="text-lg text-gray-700 text-center">{{ $friendName }}</p>
                             </a>
                         </li>
-
-                        @if($count % 6 == 0)
-                            
-                            <ul class="flex flex-wrap"></ul>
-                        @endif
                     @endforeach
                 </ul>
+            @endif
 
-              @endif
           </div>
         </div>
       
@@ -236,7 +286,13 @@
                   <div class="ml-3 flex-1">
                     <p class="text-2xl font-semibold text-black-700">{{ $p->user_name }}</p>
                     <div class="flex">
-                        <p class="text-lg text-gray-500">{{ $p->created_at->locale('vi')->diffForHumans() }}</p>
+                        <p class="text-lg text-gray-500">
+                        @if (now()->diffInHours($p->created_at) >= 24)
+                                        {{ $p->created_at->addDay()->format('d-m-Y') }}
+                                    @else
+                                        {{ $p->created_at->locale('vi')->diffForHumans() }}
+                                    @endif
+</p>
                         @if( $p->regime === 1)
                             <img id="imageIcon" src="/luanvan_tn/public/image/friend.png" alt="Image Icon"
                                 class="w-5 h-5 ml-3 mt-1">

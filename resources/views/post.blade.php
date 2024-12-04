@@ -36,8 +36,13 @@
                         <a href="{{ $post->id_nd === session('id') ? route('profile', ['id' => session('id')]) : route('profiles', ['id' => $post->id_nd]) }}" class="flex items-center">
                             <div class="flex mt-1">
                                 <p class="text-lg font-medium text-black">{{ $user->name }}.</p>
-                                <p class="text-lg text-gray-500 ml-4">{{ $post->created_at->locale('vi')->diffForHumans() }}</p>
-
+                                <p class="text-lg text-gray-500">
+                                    @if (now()->diffInHours($post->created_at) >= 24)
+                                        {{ $post->created_at->addDay()->format('d-m-Y') }}
+                                    @else
+                                        {{ $post->created_at->locale('vi')->diffForHumans() }}
+                                    @endif
+                                </p>
                             </div>
                         </a>
                     </div>
@@ -53,7 +58,13 @@
                         
                             <p class="text-xl font-semibold text-black">{{ $user->name }}</p>
                             <div class="flex">
-                                <p class="text-lg text-gray-500">{{ $post->created_at->locale('vi')->diffForHumans() }}</p>
+                                <p class="text-lg text-gray-500">
+                                    @if (now()->diffInHours($post->created_at) >= 24)
+                                        {{ $post->created_at->addDay()->format('d-m-Y') }}
+                                    @else
+                                        {{ $post->created_at->locale('vi')->diffForHumans() }}
+                                    @endif
+                                </p>
                                 @if( $post->regime === 1)
                                 <img id="imageIcon" src="/luanvan_tn/public/image/friend.png" alt="Image Icon"
                                 class="w-5 h-5 ml-3 mt-1">

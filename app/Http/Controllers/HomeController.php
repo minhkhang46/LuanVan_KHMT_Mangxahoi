@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use App\Models\UserNd;
 use App\Models\Post;
@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use App\Models\Group;
 use App\Models\GroupMember;
 use App\Models\Comment;
+use App\Models\Topic;
 class HomeController extends Controller
 {
    
@@ -31,7 +32,7 @@ class HomeController extends Controller
                 $currentUser->save();
             }
         }
-    
+        $topics = Topic::all();
         // Lấy tất cả các ID bạn bè (bao gồm cả user_id và friend_id)
         $friendIds = Friend::where(function ($query) use ($currentUserId) {
             $query->where('user_id', $currentUserId)
@@ -115,11 +116,12 @@ class HomeController extends Controller
             $commentsWithUser = [];
             
             foreach ($comments as $comment) {
-                $user = UserNd::where('id', $comment->user_id)->first(['name', 'avatar']);
+                $user = UserNd::where('id', $comment->user_id)->first(['name', 'avatar', 'id']);
                 $commentsWithUser[] = [
                     'id' => $comment->id,
                     'comment_content' => $comment->content,
                     'user_name' => $user ? $user->name : 'Người dùng không xác định',
+                    'user_id' => $user ? $user->id : 'Người dùng không xác định',
                     'user_avatar' => $user ? $user->avatar : null,
                     'created_at' => $comment->created_at,
                     'parent_id'=>$comment->parent_id
@@ -192,7 +194,7 @@ class HomeController extends Controller
             'friends' => $friends,
             'notificationCount' => $notificationCount,
             'onlineUsers' => $onlineUsers,
-            'likes' => $likes,
+            'likes' => $likes, 'topics'=>$topics,
             'friendSuggestions' => $friendSuggestions,'imageSize'=>$imageSize ,'postsWithComments'=>$postsWithComments
         ]);
     }
@@ -209,9 +211,12 @@ class HomeController extends Controller
         $user = UserNd::findOrFail($id);
     
         // Lấy tất cả bài viết của người dùng theo ID
-        $posts = Post::where('id_nd', $id)->orderBy('created_at', 'desc')->get();
+        $posts = Post::where('id_nd', $id)->whereNull('group_id')->orderBy('created_at', 'desc')->get();
         $imageSize = [];
-
+        $postCount = Post::where('id_nd', $id) // Thêm điều kiện để lọc theo user_id
+        ->whereNull('group_id') // Điều kiện group_id là NULL
+        ->count(); // Đếm số lượng bài viết
+        // dd($postCount);
         foreach ($posts as $post) {
             $imagePath = storage_path('app/public/' . $post->images);
             
@@ -267,7 +272,7 @@ class HomeController extends Controller
                 'comments' => $commentsWithUser,
             ];
         }
-        
+        $topics = Topic::all();
         // Kết hợp thông tin người dùng vào bài viết
         foreach ($posts as $post) {
             if (isset($users[$post->id_nd])) {
@@ -334,7 +339,7 @@ class HomeController extends Controller
                                  ->where('read_at', 0)
                                  ->count();                     
         // Truyền tất cả dữ liệu cần thiết đến view
-        return view('profile', compact('user', 'imageSize','posts', 'requestStatus', 'receivedRequest', 'totalFriends', 'newMessagesCount', 'id','friendInfos', 'sessionUserId', 'notificationCount', 'likes', 'postsWithComments'));
+        return view('profile', compact('postCount','user', 'topics','imageSize','posts', 'requestStatus', 'receivedRequest', 'totalFriends', 'newMessagesCount', 'id','friendInfos', 'sessionUserId', 'notificationCount', 'likes', 'postsWithComments'));
     
     }
     
@@ -342,41 +347,48 @@ class HomeController extends Controller
 
     //Ham xưr lý đăng nhập
     public function login(Request $request)
-{
-    $emailorphone = $request->input('emailorphone');
-    $password = md5($request->input('password'));
-
-    // Tìm người dùng bằng email hoặc số điện thoại
-    $user = UserNd::where('email', $emailorphone)
-                  ->orWhere('phone', $emailorphone)
-                  ->first();
-
-    if (!$user) {
-        // Nếu không tìm thấy người dùng, hiển thị thông báo không có tài khoản
-        return redirect()->back()->with('error', 'Bạn chưa có tài khoản. Vui lòng đăng ký.');
-    }
-
-    if ($password == $user->password) {
-        if ($user->status == 0) {
-            // Lưu thông tin vào session nếu tài khoản đang mở
-            session()->put('id', $user->id);
-            session()->put('name', $user->name);
-            session()->put('email', $user->email);
-            session()->put('phone', $user->phone);
-            session()->put('date', $user->date);
-            session()->put('avatar', $user->avatar);
-            session()->put('possition', $user->possition);
-
-            return redirect()->route('homes', ['id' => $user->id])->with('success', 'Đăng nhập thành công.');
-        } else {
-            // Tài khoản bị khóa, trả về thông báo lỗi
-            return redirect()->back()->with('error', 'Tài khoản của bạn hiện đang bị khóa.');
+    {
+        $emailorphone = $request->input('emailorphone');
+        $password = md5($request->input('password'));
+    
+        // Tìm người dùng bằng email hoặc số điện thoại
+        $user = UserNd::where('email', $emailorphone)
+                      ->orWhere('phone', $emailorphone)
+                      ->first();
+    
+        if (!$user) {
+            // Nếu không tìm thấy người dùng
+            return redirect()->back()->with('error', 'Bạn chưa có tài khoản. Vui lòng đăng ký.');
         }
-    } 
-
-    // Xử lý nếu đăng nhập thất bại
-    return redirect()->back()->with('error', 'Thông tin đăng nhập không chính xác. Vui lòng thử lại.');
-}
+    
+        if ($password == $user->password) {
+            if ($user->status == 0) {
+                // Lưu thông tin người dùng vào session
+                session()->put('id', $user->id);
+                session()->put('name', $user->name);
+                session()->put('email', $user->email);
+                session()->put('phone', $user->phone);
+                session()->put('date', $user->date);
+                session()->put('avatar', $user->avatar);
+                session()->put('possition', $user->possition);
+    
+                // Kiểm tra điều kiện `possition`
+                if ($user->possition == 1) {
+                    return redirect()->route('dashboard', ['id' => $user->id])->with('success', 'Đăng nhập thành công.');
+                }
+    
+                // Điều hướng mặc định cho `possition != 1`
+                return redirect()->route('homes', ['id' => $user->id])->with('success', 'Đăng nhập thành công.');
+            } else {
+                // Tài khoản bị khóa
+                return redirect()->back()->with('error', 'Tài khoản của bạn hiện đang bị khóa.');
+            }
+        }
+    
+        // Xử lý nếu đăng nhập thất bại
+        return redirect()->back()->with('error', 'Thông tin đăng nhập không chính xác. Vui lòng thử lại.');
+    }
+    
 
 
     // hàm xử lý đăng xuất
@@ -387,7 +399,8 @@ class HomeController extends Controller
     }
     //Hiển thị trang đăng ký
     public function register_index(){
-        return view('register');
+        $topic = Topic::all();
+        return view('register', ['topic'=> $topic]);
     }
 
     //Hàm đăng ký tài khoản
@@ -426,7 +439,7 @@ class HomeController extends Controller
             'password' => md5($request->password), // Băm mật khẩu bằng MD5
             'email' => $request->email,
             'phone' => $request->phone,
-            'date' => $request->date,
+           'date' => $request->date,
             'gender' => $request->gender,
             'avatar' => $avatarPath, // Lưu đường dẫn avatar vào cơ sở dữ liệu
             'description' => $request->description,
@@ -436,9 +449,9 @@ class HomeController extends Controller
         ]);
     
         // Kiểm tra xem người dùng đã được tạo thành công hay không
-        if ($user_nd) {
+         if ($user_nd) {
             // Nếu thành công, chuyển hướng hoặc thực hiện các thao tác khác ở đây
-            return redirect()->route('register')->with('success', 'Tạo tài khoản thành công!');
+            return redirect()->route('login')->with('success', 'Tạo tài khoản thành công!');
         } else {
             // Nếu không thành công, chuyển hướng hoặc hiển thị thông báo lỗi tương ứng
             return redirect()->route('register')->with('error', 'Đã xảy ra lỗi khi tạo tài khoản.');
@@ -448,7 +461,12 @@ class HomeController extends Controller
 
     public function timKiem(Request $request)
     {
+       
+    
         $keyword = $request->input('keyword');
+        if (is_null( $keyword) ||  $keyword === '' ) {
+            return back()->with('error', 'Vui lòng nhập từ khóa để tìm kiếm.');
+        }
         $currentUserId = session('id');
       
         // Tìm kiếm người dùng
@@ -793,7 +811,9 @@ class HomeController extends Controller
 
         $friendInfos = [];
         $sessionUserId = session('id');
-
+        $postCount = Post::where('id_nd', $id) // Thêm điều kiện để lọc theo user_id
+        ->whereNull('group_id') // Điều kiện group_id là NULL
+        ->count(); // Đếm số lượng bài viết
         foreach ($friends as $friend) {
             $friendIds = collect([$friend->user_id, $friend->friend_id])
                 ->filter(fn($friendId) => $friendId !== (int)$id);
@@ -848,7 +868,7 @@ class HomeController extends Controller
         $requestStatus = Friend::where('user_id', $currentUserId)
                                ->where('friend_id', $id)
                                ->first();
-    
+
         // Kiểm tra yêu cầu kết bạn đã nhận từ người dùng hiện tại
         $receivedRequest = Friend::where('user_id', $id)
                                  ->where('friend_id', $currentUserId)
@@ -862,7 +882,7 @@ class HomeController extends Controller
         // Truyền tất cả dữ liệu cần thiết đến view
       
         return view('users', [
-            'id'=>$id,
+            'id'=>$id, 'postCount'=>$postCount,
             'user' => $user,
             'posts' => $filteredPosts, 
             'requestStatus'=>$requestStatus,
@@ -892,11 +912,22 @@ class HomeController extends Controller
         // Kiểm tra đầu vào có khớp với ID người dùng hay không
         if ($user->id == $id) {
             // Validate dữ liệu đầu vào, các trường không bắt buộc (nullable)
-          
+            if ($request->hasFile('avatar')) {
+                // Nếu có ảnh cũ, xóa ảnh cũ trước khi lưu ảnh mới
+                if ($user->avatar) {
+                    Storage::delete('public/' . $user->avatar);
+                }
+        
+                $avatarPath = $request->file('avatar')->store('avatars', 'public');
+                $user->avatar = $avatarPath;
+            }
     
             // Cập nhật tên, số điện thoại, ngày sinh, mô tả (nếu có)
             if ($request->input('name')) {
                 $user->name = $request->input('name');
+            }
+            if ($request->input('email')) {
+                $user->email = $request->input('email');
             }
             if ($request->input('phone')) {
                 $user->phone = $request->input('phone');
@@ -953,4 +984,58 @@ class HomeController extends Controller
         return redirect()->route('user')->with('success', $message);
     }
 
+    // Hiển thị trang quản lý của admin
+    public function dashboard()
+{
+    $currentUserId = session('id');
+
+    // Đếm tổng số bài viết
+    $postCount = Post::count();
+
+    // Đếm số bài viết của người dùng (group_id == null)
+    $userPostCount = Post::whereNull('group_id')->count();
+
+    // Đếm số bài viết của nhóm (group_id != null)
+    $groupPostCount = Post::whereNotNull('group_id')->count();
+
+    // Đếm số người dùng
+    $userCount = UserNd::count();
+
+    // Đếm số nhóm
+    $groupCount = Group::count();
+
+    // Đếm số tin nhắn chưa đọc
+    $newMessagesCount = Messager::where('receiver_id', $currentUserId)
+        ->where('is_read', 0)
+        ->count();
+
+    // Đếm số thông báo chưa đọc
+    $notificationCount = Notification::where('user_id', $currentUserId)
+        ->where('read_at', 0)
+        ->count();
+
+    return view('admin.dasboard', compact(
+        'postCount', 
+        'userPostCount', 
+        'groupPostCount',
+        'userCount', 
+        'groupCount', 
+        'newMessagesCount', 
+        'notificationCount'
+    ));
+}
+
+public function list()
+{
+    $topic= Topic::all();
+    $currentUserId = session('id');
+    $newMessagesCount = Messager::where('receiver_id', $currentUserId)
+    ->where('is_read', 0)
+    ->count();
+
+    $notificationCount = Notification::where('user_id', $currentUserId)
+    ->where('read_at', 0)
+    ->count();
+    return view('chinhsach', compact('topic', 'newMessagesCount', 'notificationCount'));
+}
 }

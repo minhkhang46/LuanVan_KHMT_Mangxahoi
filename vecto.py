@@ -87,7 +87,7 @@ index_combined.init_index(max_elements=num_users, ef_construction=200, M=16)
 index_combined.add_items(combined_embeddings, valid_user_ids)
 
 # Thiết lập số lượng lân cận gần nhất (k)
-k = 5
+k = 10
 
 # Tạo danh sách chứa kết quả
 results = []

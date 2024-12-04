@@ -10,34 +10,35 @@ class CommentController extends Controller
 {
     public function Comments(Request $request)
     {
-  
-
-        Comment::create([
+        $userId = session('id');
+        $user = UserNd::find($userId);
+    
+        // Tạo bình luận mới
+        $comment = Comment::create([
             'content' => $request->content,
-            'user_id' => session('id'), // Giả sử bạn đang dùng session để lưu user_id
+            'user_id' => $userId,
             'post_id' => $request->post_id,
-            'parent_id' => $request->parent_id, // Nếu là trả lời bình luận
+            'parent_id' => $request->parent_id,
         ]);
-          // Tạo thông báo nếu là bình luận trên bài viết
-            $userId = session('id');
-            $user = UserNd::find($userId);
-            $postOwnerId = Post::find($request->post_id); // Lấy ID của người sở hữu bài viết
-            $postAuthorId = $postOwnerId->id_nd;
-            if ($postAuthorId !== session('id')) { // Kiểm tra để không gửi thông báo cho chính mình
-                Notification::create([
-                    'user_id' => $postAuthorId  , // Người nhận thông báo
-                    'type' => 'comment',
-                    'data' => json_encode([
-                        'message' => "{$user->name} đã bình luận bài viết của bạn.",
-                        'avatar' => $user->avatar ?? 'default-avatar.png',
-                        'url' => route('posts.show', ['id' => $request->post_id]), // Liên kết đến bài viết
-                       
-                    ]),
-                ]);
-            }
-        
+    
+        // Tạo thông báo nếu cần
+        $postOwner = Post::find($request->post_id);
+        if ($postOwner->id_nd !== $userId) {
+            Notification::create([
+                'user_id' => $postOwner->id_nd,
+                'type' => 'comment',
+                'data' => json_encode([
+                    'message' => "{$user->name} đã bình luận bài viết của bạn.",
+                    'avatar' => $user->avatar ?? 'default-avatar.png',
+                    'url' => route('posts.show', ['id' => $request->post_id]),
+                ]),
+            ]);
+        }
+    
+        // Trả về bình luận mới để cập nhật giao diện
         return back();
     }
+    
 
     public function storeReply(Request $request, $post_id)
     {
@@ -65,5 +66,27 @@ class CommentController extends Controller
         }
         return redirect()->back()->with('success', 'Đã gửi trả lời!');
     }
+    public function destroy($id)
+    {
+        // Tìm bình luận theo ID
+        $comment = Comment::findOrFail($id);
+    
+        // Kiểm tra quyền sở hữu bình luận
+        if ($comment->user_id === session('id')) {
+            // Xóa bình luận
+            $comment->delete();
+            return response()->json(['success' => true]);  // Trả về JSON với thông báo thành công
+        }
+    
+        // Trả về thông báo lỗi nếu người dùng không có quyền
+        return response()->json(['success' => false, 'message' => 'Bạn không có quyền xóa bình luận này.'], 403);
+    }
+    
+    
+    
+    
+    
+    
+    
 
 }

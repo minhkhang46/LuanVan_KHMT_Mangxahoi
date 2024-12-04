@@ -11,6 +11,9 @@ class MessagerController extends Controller
 {
     public function sendMessage(Request $request)
     {
+        if (is_null($request->content) || $request->content === '' && is_null($request->hasFile('image')) || $request->hasFile('image') === '' && is_null($request->hasFile('file')) || $request->hasFile('file') === '') {
+            return back()->with('error', 'Nhập nội dung trước khi gửi.');
+        }
         // Xử lý upload file hình ảnh
         $imagePath = null;
         if ($request->hasFile('image')) {

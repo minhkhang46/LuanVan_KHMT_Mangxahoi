@@ -30,10 +30,26 @@
     object-fit: contain; /* Giữ hình ảnh nguyên vẹn trong không gian mà không bị cắt */
 }
 
+.hidden { display: none; }
+#dropdown {
+    position: absolute; /* Định vị tuyệt đối để dropdown xuất hiện ngay dưới ô nhập */
+    z-index: 1000; /* Đảm bảo dropdown nổi lên trên các phần tử khác */
+    background-color: white; /* Nền trắng để nổi bật */
+    border: 1px solid #ccc; /* Viền dropdown */
+    border-radius: 8px; /* Bo tròn góc */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Đổ bóng để đẹp hơn */
+    max-height: 200px; /* Giới hạn chiều cao dropdown */
+    overflow-y: auto; /* Thêm cuộn khi danh sách quá dài */
+}
 
 
 </style>
+
+
+
 <div class="container mx-auto px-4 py-8 mt-20">
+
+
     <!-- User Info Section -->
     <div class="bg-white rounded-lg shadow-lg border border-gray-200  w-full h-full">
         <div class="flex flex-col md:flex-row items-center p-5 -ml-32">
@@ -51,14 +67,15 @@
                     {{ $user->name }}</h2>
 
                 <!-- Buttons Section -->
-                <div class="flex justify-between items-center mt-2">
-                    <p class="text-lg text-black">{{$totalFriends}} bạn bè</p>
+                <div class="flex  mt-2">
+                    <p class="text-lg text-black"> <strong>{{$totalFriends}}</strong> bạn bè</p>
+                    <p class="text-lg text-black ml-10"><strong>{{$postCount}}</strong> bài viết</p>
 
                 </div>
             </div>
         </div>
     </div>
-
+   
     <!-- User Details and Posts Section -->
     <div class="flex flex-col md:flex-row gap-8 mt-5">
         <!-- User Details and Friends List -->
@@ -76,22 +93,38 @@
                     <div class="border border-gray-300 mb-4"></div>
                     <div class="flex items-center mb-2 ml-2">
                         <img src="/luanvan_tn/public/image/study.png" alt="Email Icon" class="w-8 h-8 mr-2" />
-                        <p class="text-gray-700 text-lg">Chuyên đề {{ $user->chuyende }}</p>
+                        @if($user->chuyende )
+                            <p class="text-gray-700 text-lg">Chuyên môn {{ $user->chuyende }}</p>
+                        @else
+                            <p class="text-gray-700 text-lg">Chưa có chuyên môn </p>
+                    @endif
                     </div>
                     <div class="flex items-center mb-2 ml-2">
                         <img src="/luanvan_tn/public/image/cv.png" alt="CV Icon" class="w-8 h-8 mr-2" />
+                        @if($user->cv)
                         <a href="{{ asset('storage/cv/' . $user->cv) }}" download class="text-blue-600 text-lg">
                             {{ $user->cv }}
                         </a>
+                        @else 
+                        <p class="text-gray-700 text-lg">Chưa có CV</p>
+                        @endif
                     </div>
 
                     <div class="flex items-center mb-2 ml-3">
                         <img src="/luanvan_tn/public/image/email.png" alt="Email Icon" class="w-6 h-6 mr-2" />
+                        @if($user->email)
                         <p class="text-gray-700 text-lg">{{ $user->email }}</p>
+                        @else 
+                        <p class="text-gray-700 text-lg">Chưa có email</p>
+                        @endif
                     </div>
                     <div class="flex items-center mb-2 ml-3">
                         <img src="/luanvan_tn/public/image/phone.png" alt="Phone Icon" class="w-6 h-6 mr-2" />
+                        @if($user->phone)
                         <p class="text-gray-700 text-lg">{{ $user->phone }}</p>
+                        @else 
+                        <p class="text-gray-700 text-lg">Chưa có số điện thoại</p>
+                    @endif
                     </div>
                     <div class="flex items-center mb-2 ml-3">
                         <img src="/luanvan_tn/public/image/day.png" alt="Day Icon" class="w-6 h-6 mr-2" />
@@ -123,7 +156,21 @@
                         <!-- Form trong modal -->
                         <form action="{{ route('user.profile' , session('id')) }}" method="POST" enctype="multipart/form-data" class="max-w-xl p-6">
                             @csrf
-                            <!-- Các trường thông tin -->
+                            <div class="mb-4">
+                                <label for="avatar" class="block text-gray-700 font-semibold text-lg mb-2">Ảnh đại diện</label>
+                                <!-- Hiển thị ảnh hiện tại -->
+                                <div class="mb-3">
+                                    @if($user->avatar)
+                                        <img id="current-avatar" src="{{ asset('storage/' . $user->avatar) }}" alt="Avatar hiện tại" class="w-24 h-24 rounded-full object-cover">
+                                    @else
+                                        <p class="text-gray-500">Chưa có ảnh đại diện</p>
+                                    @endif
+                                </div>
+                                <!-- Input để cập nhật ảnh -->
+                                <input type="file" id="avatar" name="avatar" class="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg" onchange="previewImage(event)">
+                            </div>
+
+                          
                             <div class="mb-4">
                                 <label for="description" class="block text-lg text-gray-700 font-semibold mb-2">Mô tả</label>
                                 <textarea id="description" name="description" class="w-full p-2 border-gray-300 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg">{{ old('description', $user->description) }}</textarea>
@@ -178,10 +225,10 @@
                             </div>
 
                             <!-- Hidden input to hold the selected date -->
-                            <input type="hidden" name="date" id="date"  value="{{$user->date}}">
+                            <input  type="hidden" name="date" id="date"  value="{{$user->date}}">
 
                             <div class="mb-4">
-                                <label class="block text-gray-700 font-semibold text-lg mb-2">Chuyên đề</label>
+                                <label class="block text-gray-700 font-semibold text-lg mb-2">Chuyên môn</label>
                                 <input type="text" name="chuyende" id="chuyende" value="{{$user->chuyende}}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 form-input" placeholder="Nhập chuyên đề">
                             </div>
                             <div class="mb-4">
@@ -201,49 +248,47 @@
             </div>
             <!-- Danh sách bạn bè -->
             <div class="mb-4 w-full bg-white p-5 rounded-lg shadow-lg border border-gray-200 mt-5">
-                <h3 class="text-2xl font-semibold text-gray-900 mb-3">Danh sách bạn bè</h3>
+                <div class= "flex">
+                    <h2 class="text-2xl font-semibold text-gray-900 mb-4">Danh sách bạn bè</h2>
+                    <a href="{{ route('friend.list', ['id' => $user->id]) }}" class="text-lg  ml-24 mt-1 text-blue-700 rounded-md hover:text-blue-800">
+                    Xem tất cả bạn bè
+                    </a>
+
+                </div>
                 <div class="border border-gray-300 mb-4"></div>
                 @if(empty($friendInfos))
-                <p class="text-gray-700 text-lg text-center">Chưa có bạn bè.</p>
+                    <p class="text-gray-700 ml-3 text-lg text-center">Chưa có bạn bè.</p>
                 @else
-                @php
-                $count = 0;
-                @endphp
+                    <ul class="flex flex-wrap">
+                        @php
+                            $limitedMembers = array_slice($friendInfos, 0, 6);
+                        @endphp
 
-                <ul class="flex flex-wrap">
-                    @foreach($friendInfos as $friendInfo)
-                    @php
-                    $friendName = $friendInfo->name ?? 'Không xác định';
-                    $friendAvatar = $friendInfo->avatar ?? 'default-avatar.png';
-                    $profileRoute = route('profiles', ['id' => $friendInfo->id]);
-                    $isCurrentUser = ($friendInfo->id === $sessionUserId);
-                    $count++;
-                    @endphp
+                        @foreach($limitedMembers as $friendInfo)
+                            @php
+                                $friendName = $friendInfo->name ?? 'Không xác định';
+                                $friendAvatar = $friendInfo->avatar ?? 'default-avatar.png';
+                                $profileRoute = route('profiles', ['id' => $friendInfo->id]);
+                                $isCurrentUser = ($friendInfo->id === $sessionUserId);
+                            @endphp
 
-                    <li class="mb-4 flex flex-col w-1/3">
-                        <a href="{{ $isCurrentUser ? route('profile', ['id' => $friendInfo->id]) : $profileRoute }}"
-                            class="flex flex-col items-center">
-                            <img src="{{ asset('storage/' . $friendAvatar) }}" alt="Friend Avatar"
-                                class="h-32 w-32 rounded-lg mb-2">
-                            <p class="text-lg text-gray-700 text-center">{{ $friendName }}</p>
-                        </a>
-                    </li>
-
-                    @if($count % 6 == 0)
-                </ul>
-                <ul class="flex flex-wrap">
-                    @endif
-                    @endforeach
-                </ul>
-
+                            <li class="mb-4 flex flex-col w-1/3">
+                                <a href="{{ $isCurrentUser ? route('profile', ['id' => $friendInfo->id]) : $profileRoute }}" class="flex flex-col items-center">
+                                    <img src="{{ asset('storage/' . $friendAvatar) }}" alt="Friend Avatar" class="h-32 w-32 rounded-lg mb-2">
+                                    <p class="text-lg text-gray-700 text-center">{{ $friendName }}</p>
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
                 @endif
+
             </div>
         </div>
 
         <!-- User Posts Section -->
         <div class="w-full md:w-2/3">
-            <div id="postForm" class="bg-white p-5 mb-8 rounded-lg shadow-md  overflow-y-auto">
-                <form action="{{ route('post_content') }}" method="POST" enctype="multipart/form-data">
+            <div  class="bg-white p-5 mb-8 rounded-lg shadow-md  overflow-y-auto">
+                <form action="{{ route('post_content') }}" method="POST" id ="postForm" enctype="multipart/form-data">
                     @csrf
                     <input name="id_nd" type="hidden" value="{{ session('id') }}" />
                     <div class="mb-4  items-center">
@@ -251,16 +296,21 @@
                             alt="User Avatar">
                    
                             <div class="flex">
-                                <input list="topics" id="topic" name="topic" class="w-full p-2 ml-2 mb-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg" placeholder="Chọn hoặc nhập chủ đề...">
-
-                                <!-- Danh sách các chủ đề có sẵn để chọn -->
-                                <datalist id="topics" class="w-full">
-                                    <option value="Thị Giác Máy Tính">
-                                    <option value="Xử Lý Ngôn Ngữ Tự Nhiên">
-                                    <option value="Máy Học Ứng Dụng">
-                                    <option value="Khoa Học Máy Tính">
-                                    <option value="Khai Phá Dữ Liệu">   
-                                </datalist>
+                                <div class="relative w-2/3 ml-2 mb-3">
+                                    <input type="text" id="topic-input" name="topic"   autocomplete="off" 
+                                        class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg " 
+                                        placeholder="Nhập hoặc chọn chủ đề..."
+                                        onfocus="showDropdown()" 
+                                        oninput="filterDropdown()">
+                                    <div id="dropdown" class="absolute hidden bg-white text-lg  border  rounded-lg  w-full">
+                                        @foreach ($topics as $topic)
+                                            <div class="p-2 cursor-pointer hover:bg-gray-200" 
+                                                onclick="selectDropdown('{{ $topic->topic }}')">
+                                                {{ $topic->topic }}
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
                                 <!-- Thẻ select chỉ cho phép người dùng chọn chủ đề từ danh sách -->
                                 <select id="regime" name="regime" class="w-1/3 p-2 ml-2 mb-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg">
                                     <option value="">Tùy chỉnh chế độ</option> <!-- Tùy chọn mặc định (trống) -->
@@ -272,7 +322,7 @@
                             <div class="mr-2">
                             <textarea id="content" name="noidung" rows="1"
                                 class="w-full p-2 ml-2 border  border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
-                                placeholder="Write something..." oninput="toggleSubmitButton()"></textarea>
+                                placeholder="Write something..." ></textarea>
                             </div>
                     </div>
                     <div class="border border-gray-300 -mb-3"></div>
@@ -305,9 +355,9 @@
                             </label>
                         </div>
                     </div>
-                    <button id="postButton" type="submit"
-                        class="bg-blue-500 text-white w-full px-4 py-2 rounded-lg font-semibold hover:bg-blue-600 transition duration-300 text-lg opacity-50 cursor-not-allowed"
-                        disabled>Post</button>
+                    <button type="submit"
+                        class="bg-blue-500 text-white w-full px-4 py-2 rounded-lg font-semibold hover:bg-blue-600 transition duration-300 text-lg  "
+                        >Đăng</button>
                 </form>
             </div>
             <div class="bg-white p-5 rounded-lg mb-4">
@@ -329,7 +379,13 @@
                     <div class="ml-3 flex-1">
                     <p class="text-xl font-semibold text-black">{{ $p->user_name }}</p>
                             <div class="flex">
-                                <p class="text-lg text-black">{{ $p->created_at->locale('vi')->diffForHumans() }}</p>
+                                <p class="text-lg text-gray-700">
+                                    @if (now()->diffInHours($p->created_at) >= 24)
+                                        {{ $p->created_at->addDay()->format('d-m-Y') }}
+                                    @else
+                                        {{ $p->created_at->locale('vi')->diffForHumans() }}
+                                    @endif
+                                </p>
                                 @if( $p->regime === 1)
                                 <img id="imageIcon" src="/luanvan_tn/public/image/friend.png" alt="Image Icon"
                                 class="w-5 h-5 ml-3 mt-1">
@@ -350,25 +406,27 @@
 
                         <!-- Dropdown Menu -->
                         <div id="dropdown-menu-{{ $p->id }}" class="dropdown-menu hidden absolute right-0 mt-1 w-40 bg-gray-100 rounded-md shadow-lg z-50">
-                          <form action="{{ route('posts.destroy', ['id' => $p->id]) }}" method="POST">
-                              @csrf
-                              @method('DELETE')
-                              <button type="submit" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">
-                                  <div class="flex items-center">
-                                      <img id="imageIcon" src="/luanvan_tn/public/image/trash.png" alt="Image Icon" class="w-5 h-5">
-                                      <span class="ml-2">Xóa bài đăng</span>
-                                  </div>
-                              </button>
-                          </form>
-                      </div>
-
+                            <form action="{{ route('posts.destroy', ['id' => $p->id]) }}" method="POST" id="delete-post-form-{{ $p->id }}" class="delete-post-form">
+                                @csrf
+                                @method('DELETE')
+                                <button type="button" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100" onclick="deletePost({{ $p->id }})">
+                                    <div class="flex items-center">
+                                        <img id="imageIcon" src="/luanvan_tn/public/image/trash.png" alt="Image Icon" class="w-5 h-5">
+                                        <span class="ml-2">Xóa bài đăng</span>
+                                    </div>
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
                   
                 @if($p->topic)
                     <p class="text-black font-semibold text-xl mb-2">Chủ đề {{ $p->topic }}</p>
                     @endif
-                                <p class="text-black  text-xl">{{ $p->noidung }}</p>
+                    @if($p->noidung)
+                    <p class="text-black  text-xl">{{ $p->noidung }}</p>
+                    @endif
+                               
                 @if($p->images && $p->images !== 'default/image.png')
                 <div class="flex justify-center mb-4">
                     @php
@@ -541,20 +599,7 @@ function previewSelectedFile(event, previewId, fileNameId) {
     }
 }
 
-function toggleSubmitButton() {
-    const textarea = document.getElementById('content');
-    const submitButton = document.getElementById('postButton');
 
-    if (textarea.value.trim() !== '') {
-        submitButton.disabled = false;
-        submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
-        submitButton.classList.add('opacity-100', 'cursor-pointer');
-    } else {
-        submitButton.disabled = true;
-        submitButton.classList.add('opacity-50', 'cursor-not-allowed');
-        submitButton.classList.remove('opacity-100', 'cursor-pointer');
-    }
-}
 </script>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -604,7 +649,9 @@ function toggleSubmitButton() {
         });
     });
 </script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"
+        integrity="sha512-AA1Bzp5Q0K1KanKKmvN/4d3IRKVlv9PYgwFPvm32nPO6QS8yH1HO7LbgB1pgiOxPtfeg5zEn2ba64MUcqJx6CA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
 function openModal(postId) {
     var modal = document.getElementById('likes-modal-' + postId);
@@ -644,36 +691,30 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
-// Add event listener to handle form submission
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.delete-post-form').forEach(function(form) {
-        form.addEventListener('submit', function(event) {
-            event.preventDefault(); // Ngăn việc submit mặc định để xử lý bằng JS
-
-            if (confirm('Bạn có chắc chắn muốn xóa bài đăng này không?')) {
-                // Gửi request xóa bài đăng
-                fetch(form.action, {
-                    method: 'POST',
-                    body: new FormData(form),
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') // Gửi CSRF token
-                    }
-                }).then(response => {
-                    if (response.ok) {
-                        alert('Bài đăng đã được xóa thành công.'); // Thông báo xóa thành công
-                        location.reload(); // Làm mới trang sau khi xóa thành công
-                    } else {
-                        alert('Không thể xóa bài đăng.'); // Thông báo lỗi nếu xóa không thành công
-                        console.error('Error: Failed to delete post');
-                    }
-                }).catch(error => {
-                    alert('Đã xảy ra lỗi khi xóa bài đăng.'); // Thông báo lỗi khi gặp sự cố
-                    console.error('Error:', error);
-                });
+function deletePost(postId) {
+    swal({
+            title: "Xác nhận xóa?",
+            text: "Bạn có chắc chắn muốn xóa bài đăng này?",
+            icon: "warning",
+            buttons: true,
+            dangerMode: true,
+        })
+        .then((willDelete) => {
+            if (willDelete) {
+                submitPostDeletion(postId); // Gọi hàm gửi request xóa bài đăng
+            } else {
+                swal("Đã hủy", "Việc xóa đã bị hủy", "error");
             }
         });
-    });
-});
+}
+
+// Hàm để gửi request xóa bài đăng
+function submitPostDeletion(postId) {
+    const form = document.querySelector(`#delete-post-form-${postId}`);
+    form.submit(); // Submit form xóa bài đăng
+}
+
+
 
 
 
@@ -725,6 +766,91 @@ function toggleReplyForm(commentId) {
     replyForm.classList.toggle('hidden');
 }
 
+</script>
+
+<script>
+function showDropdown() {
+    document.getElementById('dropdown').classList.remove('hidden');
+}
+
+function filterDropdown() {
+    const input = document.getElementById('topic-input').value.toLowerCase();
+    const dropdown = document.getElementById('dropdown');
+    const items = dropdown.children;
+
+    for (let i = 0; i < items.length; i++) {
+        const text = items[i].innerText.toLowerCase();
+        if (text.includes(input)) {
+            items[i].style.display = 'block';
+        } else {
+            items[i].style.display = 'none';
+        }
+    }
+}
+
+function selectDropdown(topic) {
+    document.getElementById('topic-input').value = topic;
+    document.getElementById('dropdown').classList.add('hidden');
+}
+
+
+</script>
+<script>
+    function previewImage(event) {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const imgElement = document.getElementById('current-avatar');
+            imgElement.src = e.target.result;
+        };
+
+        reader.readAsDataURL(file);
+    }
+</script>
+<script>
+    const day = document.getElementById('day');
+    const month = document.getElementById('month');
+    const year = document.getElementById('year');
+    const dateInput = document.getElementById('date');
+
+    function updateDateInput() {
+        const selectedDay = day.value || '';
+        const selectedMonth = month.value || '';
+        const selectedYear = year.value || '';
+
+        if (selectedDay && selectedMonth && selectedYear) {
+            dateInput.value = `${selectedYear}-${selectedMonth.padStart(2, '0')}-${selectedDay.padStart(2, '0')}`;
+        }
+    }
+
+    // Add event listeners to update the hidden input whenever a dropdown changes
+    [day, month, year].forEach(select => {
+        select.addEventListener('change', updateDateInput);
+    });
+    $(document).ready(function() {
+        const message = "{{ session('message') }}";
+        if (message) {
+            toastr.info(message, 'Thông báo', { // Thông báo dạng thông tin
+                positionClass: 'toast-top-right',
+                timeOut: 5000, // Thời gian tự động ẩn
+                closeButton: true,
+                progressBar: true
+            });
+        }
+    });
+    $(document).ready(function() {
+            const errorMessage = "{{ session('error') }}";
+            if (errorMessage) {
+                toastr.error(errorMessage, 'Lỗi', { // Thay đổi thông báo nếu cần
+                    positionClass: 'toast-top-right',
+                    timeOut: 5000, // Thời gian tự động ẩn
+                    closeButton: true,
+                    progressBar: true
+                  
+                });
+            }
+        });
 </script>
 
 
